@@ -1,3 +1,5 @@
+import { validationResult } from "express-validator";
+
 import Note from "../models/Note.js";
 import logger from "../config/logger.js";
 
@@ -10,12 +12,13 @@ import logger from "../config/logger.js";
  */
 const createNote = async (req, res, next) => {
   try {
-    const { title, content } = req.body;
-
-    if (!title || !content) {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
       res.status(400);
-      throw new Error("Title and content are required.");
+      throw new Error(errors.array()[0].msg);
     }
+
+    const { title, content } = req.body;
 
     const note = await Note.create({
       title,
@@ -35,12 +38,7 @@ const createNote = async (req, res, next) => {
       note,
     });
   } catch (error) {
-    logger.error({
-      event: "CREATE_NOTE_ERROR",
-      message: error.message,
-      stack: error.stack,
-    });
-
+    logger.error({ event: "CREATE_NOTE_ERROR", message: error.message });
     next(error);
   }
 };
@@ -54,9 +52,7 @@ const createNote = async (req, res, next) => {
  */
 const getAllNotes = async (req, res, next) => {
   try {
-    const notes = await Note.find({
-      userId: req.user._id,
-    }).sort({
+    const notes = await Note.find({ userId: req.user._id }).sort({
       updatedAt: -1,
     });
 
@@ -72,12 +68,7 @@ const getAllNotes = async (req, res, next) => {
       notes,
     });
   } catch (error) {
-    logger.error({
-      event: "GET_ALL_NOTES_ERROR",
-      message: error.message,
-      stack: error.stack,
-    });
-
+    logger.error({ event: "GET_ALL_NOTES_ERROR", message: error.message });
     next(error);
   }
 };
@@ -112,12 +103,7 @@ const getSingleNote = async (req, res, next) => {
       note,
     });
   } catch (error) {
-    logger.error({
-      event: "GET_NOTE_ERROR",
-      message: error.message,
-      stack: error.stack,
-    });
-
+    logger.error({ event: "GET_NOTE_ERROR", message: error.message });
     next(error);
   }
 };
@@ -131,6 +117,12 @@ const getSingleNote = async (req, res, next) => {
  */
 const updateNote = async (req, res, next) => {
   try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      res.status(400);
+      throw new Error(errors.array()[0].msg);
+    }
+
     const { title, content } = req.body;
 
     const note = await Note.findOne({
@@ -160,12 +152,7 @@ const updateNote = async (req, res, next) => {
       note,
     });
   } catch (error) {
-    logger.error({
-      event: "UPDATE_NOTE_ERROR",
-      message: error.message,
-      stack: error.stack,
-    });
-
+    logger.error({ event: "UPDATE_NOTE_ERROR", message: error.message });
     next(error);
   }
 };
@@ -202,12 +189,7 @@ const deleteNote = async (req, res, next) => {
       message: "Note deleted successfully.",
     });
   } catch (error) {
-    logger.error({
-      event: "DELETE_NOTE_ERROR",
-      message: error.message,
-      stack: error.stack,
-    });
-
+    logger.error({ event: "DELETE_NOTE_ERROR", message: error.message });
     next(error);
   }
 };
