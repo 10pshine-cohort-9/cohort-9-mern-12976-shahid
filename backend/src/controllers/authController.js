@@ -1,3 +1,5 @@
+import { validationResult } from "express-validator";
+
 import User from "../models/User.js";
 import generateToken from "../utils/generateToken.js";
 import logger from "../config/logger.js";
@@ -11,14 +13,15 @@ import logger from "../config/logger.js";
  */
 const registerUser = async (req, res, next) => {
   try {
-    const { name, email, password } = req.body;
-
-    if (!name || !email || !password) {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
       res.status(400);
-      throw new Error("All fields are required.");
+      throw new Error(errors.array()[0].msg);
     }
 
-    logger.info(req.body, "Registering user with data");
+    const { name, email, password } = req.body;
+
+    logger.info({ email }, "Registering user");
 
     const existingUser = await User.findOne({ email });
 
@@ -33,11 +36,7 @@ const registerUser = async (req, res, next) => {
       throw new Error("Email already exists.");
     }
 
-    const user = await User.create({
-      name,
-      email,
-      password,
-    });
+    const user = await User.create({ name, email, password });
 
     logger.info({
       event: "REGISTER_SUCCESS",
@@ -56,12 +55,7 @@ const registerUser = async (req, res, next) => {
       },
     });
   } catch (error) {
-    logger.error({
-      event: "REGISTER_ERROR",
-      message: error.message,
-      stack: error.stack,
-    });
-
+    logger.error({ event: "REGISTER_ERROR", message: error.message });
     next(error);
   }
 };
@@ -75,22 +69,18 @@ const registerUser = async (req, res, next) => {
  */
 const loginUser = async (req, res, next) => {
   try {
-    const { email, password } = req.body;
-
-    if (!email || !password) {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
       res.status(400);
-      throw new Error("Email and password are required.");
+      throw new Error(errors.array()[0].msg);
     }
+
+    const { email, password } = req.body;
 
     const user = await User.findOne({ email }).select("+password");
 
     if (!user) {
-      logger.warn({
-        event: "LOGIN_FAILED",
-        email,
-        reason: "User not found",
-      });
-
+      logger.warn({ event: "LOGIN_FAILED", email, reason: "User not found" });
       res.status(401);
       throw new Error("Invalid email or password.");
     }
@@ -103,7 +93,6 @@ const loginUser = async (req, res, next) => {
         email,
         reason: "Incorrect password",
       });
-
       res.status(401);
       throw new Error("Invalid email or password.");
     }
@@ -117,9 +106,7 @@ const loginUser = async (req, res, next) => {
     res.status(200).json({
       success: true,
       message: "Login successful.",
-
       token: generateToken(user._id),
-
       user: {
         id: user._id,
         name: user.name,
@@ -127,12 +114,7 @@ const loginUser = async (req, res, next) => {
       },
     });
   } catch (error) {
-    logger.error({
-      event: "LOGIN_ERROR",
-      message: error.message,
-      stack: error.stack,
-    });
-
+    logger.error({ event: "LOGIN_ERROR", message: error.message });
     next(error);
   }
 };
@@ -165,14 +147,10 @@ const logoutUser = async (req, res) => {
  * --------------------------------------------------------------------------
  */
 const getProfile = async (req, res) => {
-  logger.info({
-    event: "GET_PROFILE",
-    userId: req.user._id,
-  });
+  logger.info({ event: "GET_PROFILE", userId: req.user._id });
 
   res.status(200).json({
     success: true,
-
     user: {
       id: req.user._id,
       name: req.user.name,
