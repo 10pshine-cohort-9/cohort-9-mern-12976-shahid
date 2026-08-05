@@ -17,6 +17,9 @@ router.post("/login", loginUser);
 
 router.post("/logout", protect, logoutUser);
 
-router.get("/profile", protect, getProfile);
+router.get("/profile", protect, (req, res, next) => {
+  res.setHeader("Cache-Control", "no-store");
+  next();
+}, getProfile);
 
 export default router;
