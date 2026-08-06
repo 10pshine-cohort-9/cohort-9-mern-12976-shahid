@@ -4,6 +4,7 @@ import pinoHttp from "pino-http";
 import logger from "./config/logger.js";
 import notFound from "./middleware/notFoundMiddleware.js";
 import errorHandler from "./middleware/errorMiddleware.js";
+import authRoutes from "./routes/authRoutes.js";
 const app = express();
 
 app.use(cors());
@@ -26,6 +27,7 @@ app.get("/", (req, res) => {
     message: "Notes API is running successfully on the server",
   });
 });
+app.use("/api/auth", authRoutes);
 
 app.use(notFound);
 app.use(errorHandler);
