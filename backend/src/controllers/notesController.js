@@ -1,3 +1,4 @@
+import mongoose from "mongoose";
 import Note from "../models/Notes.js";
 import logger from "../config/logger.js";
 
@@ -72,6 +73,11 @@ const getAllNotes = async (req, res, next) => {
 
 const getSingleNote = async (req, res, next) => {
   try {
+    if (!mongoose.isObjectIdOrHexString(req.params.id)) {
+      res.status(400);
+      throw new Error("Invalid note ID.");
+    }
+
     const note = await Note.findOne({
       _id: req.params.id,
       userId: req.user._id,
@@ -107,6 +113,11 @@ const getSingleNote = async (req, res, next) => {
 const updateNote = async (req, res, next) => {
   try {
     const { title, content } = req.body;
+
+    if (!mongoose.isObjectIdOrHexString(req.params.id)) {
+      res.status(400);
+      throw new Error("Invalid note ID.");
+    }
 
     const note = await Note.findOne({
       _id: req.params.id,
@@ -147,6 +158,11 @@ const updateNote = async (req, res, next) => {
 
 const deleteNote = async (req, res, next) => {
   try {
+    if (!mongoose.isObjectIdOrHexString(req.params.id)) {
+      res.status(400);
+      throw new Error("Invalid note ID.");
+    }
+
     const note = await Note.findOne({
       _id: req.params.id,
       userId: req.user._id,
