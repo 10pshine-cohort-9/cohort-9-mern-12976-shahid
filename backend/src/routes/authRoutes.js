@@ -7,13 +7,14 @@ import {
   getProfile,
 } from "../controllers/authController.js";
 
+import {authLimiter} from "../middleware/rateLimiter.js";
 import { protect } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 
-router.post("/register", registerUser);
+router.post("/register", authLimiter, registerUser);
 
-router.post("/login", loginUser);
+router.post("/login", authLimiter, loginUser);
 
 router.post("/logout", protect, logoutUser);
 

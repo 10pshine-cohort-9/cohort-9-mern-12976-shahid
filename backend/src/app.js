@@ -5,6 +5,8 @@ import logger from "./config/logger.js";
 import notFound from "./middleware/notFoundMiddleware.js";
 import errorHandler from "./middleware/errorMiddleware.js";
 import authRoutes from "./routes/authRoutes.js";
+import notesRoutes from "./routes/notesRoutes.js";
+import {overallLimiter}  from "./middleware/rateLimiter.js";
 const app = express();
 
 app.use(cors());
@@ -28,7 +30,9 @@ app.get("/", (req, res) => {
   });
 });
 app.use("/api/auth", authRoutes);
+app.use("/api/notes", notesRoutes);
 
+app.use(overallLimiter);
 app.use(notFound);
 app.use(errorHandler);
 
