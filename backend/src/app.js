@@ -4,6 +4,7 @@ import pinoHttp from "pino-http";
 import logger from "./config/logger.js";
 import notFound from "./middleware/notFoundMiddleware.js";
 import errorHandler from "./middleware/errorMiddleware.js";
+import notesRoutes from "./routes/notesRoutes.js";
 const app = express();
 
 app.use(cors());
@@ -27,6 +28,7 @@ app.get("/", (req, res) => {
   });
 });
 
+app.use("/api/notes", notesRoutes);
 app.use(notFound);
 app.use(errorHandler);
 
