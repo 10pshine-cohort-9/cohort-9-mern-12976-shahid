@@ -5,7 +5,7 @@ import logger from "./config/logger.js";
 import notFound from "./middleware/notFoundMiddleware.js";
 import errorHandler from "./middleware/errorMiddleware.js";
 import authRoutes from "./routes/authRoutes.js";
-import notesRoutes from "./routes/notesRoutes.js";
+
 const app = express();
 
 app.use(cors());
