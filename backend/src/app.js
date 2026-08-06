@@ -22,7 +22,7 @@ app.use(
     logger,
   }),
 );
-
+app.use(overallLimiter);
 app.get("/", (req, res) => {
   res.status(200).json({
     success: true,
@@ -32,7 +32,6 @@ app.get("/", (req, res) => {
 app.use("/api/auth", authRoutes);
 app.use("/api/notes", notesRoutes);
 
-app.use(overallLimiter);
 app.use(notFound);
 app.use(errorHandler);
 
