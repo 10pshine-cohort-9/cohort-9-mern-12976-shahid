@@ -19,11 +19,18 @@ apiClient.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      removeToken();
-      window.location.href = '/login';
-    }
-    return Promise.reject(error);
-  }
-);
+      const url = error.config?.url || "";
 
+      const isPublicAuthRequest =
+        url.includes("/auth/login") || url.includes("/auth/register");
+
+      if (!isPublicAuthRequest) {
+        removeToken();
+        window.location.href = "/login";
+      }
+    }
+
+    return Promise.reject(error);
+  },
+);
 export default apiClient;

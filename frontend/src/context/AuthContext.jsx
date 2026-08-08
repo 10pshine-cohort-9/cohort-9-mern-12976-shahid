@@ -29,26 +29,43 @@ export function AuthProvider({ children }) {
     }
     restoreSession();
   }, []);
-
-  async function login(email, password) {
+async function login(email, password) {
+  try {
     const res = await apiClient.post("/auth/login", { email, password });
     const token = res.data?.data?.token ?? res.data?.token;
     const loggedInUser = res.data?.data?.user ?? res.data?.user;
+
+    if (!token) {
+      throw new Error("Login failed: No authentication token received.");
+    }
+
     saveToken(token);
     setUser(loggedInUser);
     return loggedInUser;
+  } catch (err) {
+    throw new Error(
+      err.response?.data?.message || err.message || "Login failed",
+    );
   }
+}
 
-  async function register(name, email, password) {
+async function register(name, email, password) {
+  try {
     const res = await apiClient.post("/auth/register", {
       name,
       email,
       password,
     });
     return res.data?.data?.user ?? res.data?.user ?? res.data;
+  } catch (err) {
+    throw new Error(
+      err.response?.data?.message || err.message || "Registration failed",
+    );
   }
+}
 
-  async function updateUser({ name, password, imageFile }) {
+async function updateUser({ name, password, imageFile }) {
+  try {
     const payload = imageFile ? new FormData() : { name, password };
 
     if (imageFile) {
@@ -73,7 +90,12 @@ export function AuthProvider({ children }) {
     const updatedUser = res.data?.data?.user ?? res.data?.user ?? res.data;
     setUser(updatedUser);
     return updatedUser;
+  } catch (err) {
+    throw new Error(
+      err.response?.data?.message || err.message || "Update failed",
+    );
   }
+}
 
   async function logout() {
     try {
