@@ -1,3 +1,11 @@
+import AppRoutes from "./routes/AppRoutes.jsx";
+
+import { Toaster } from "react-hot-toast";
 export default function App() {
-  return <div className="text-2xl font-bold text-center">Hello world this is the starting of the frontend</div>;
+  return (
+    <>
+      <Toaster position="top-right" />
+      <AppRoutes />
+    </>
+  );
 }
