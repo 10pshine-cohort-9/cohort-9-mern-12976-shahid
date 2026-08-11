@@ -1,7 +1,7 @@
 /* eslint-disable react-refresh/only-export-components */
-import { createContext, useContext, useEffect, useState } from "react";
-import apiClient from "../api/apiClient";
-import { getToken, saveToken, removeToken } from "../utils/authStorage";
+import { createContext, useContext, useState, useEffect } from 'react';
+import apiClient from '../api/apiClient';
+import { getToken, saveToken, removeToken } from '../utils/authStorage';
 
 export const AuthContext = createContext(null);
 
@@ -17,11 +17,12 @@ export function AuthProvider({ children }) {
         return;
       }
       try {
-        const res = await apiClient.get("/auth/profile");
-
+        const res = await apiClient.get('/auth/profile');
+        // Support both { data: { user } } and { user } response shapes
         const user = res.data?.data?.user ?? res.data?.user ?? res.data;
         setUser(user);
       } catch {
+        // Token is invalid or expired — clean it up
         removeToken();
       } finally {
         setLoading(false);
@@ -29,88 +30,62 @@ export function AuthProvider({ children }) {
     }
     restoreSession();
   }, []);
-async function login(email, password) {
-  try {
-    const res = await apiClient.post("/auth/login", { email, password });
+
+  async function login(email, password) {
+    const res = await apiClient.post('/auth/login', { email, password });
+    // Support both { data: { token, user } } and { token, user } response shapes
     const token = res.data?.data?.token ?? res.data?.token;
     const loggedInUser = res.data?.data?.user ?? res.data?.user;
-
-    if (!token) {
-      throw new Error("Login failed: No authentication token received.");
-    }
-
     saveToken(token);
     setUser(loggedInUser);
     return loggedInUser;
-  } catch (err) {
-    throw new Error(
-      err.response?.data?.message || err.message || "Login failed",
-    );
   }
-}
 
-async function register(name, email, password) {
-  try {
-    const res = await apiClient.post("/auth/register", {
-      name,
-      email,
-      password,
-    });
-    return res.data?.data?.user ?? res.data?.user ?? res.data;
-  } catch (err) {
-    throw new Error(
-      err.response?.data?.message || err.message || "Registration failed",
-    );
+  async function register(name, email, password) {
+    const res = await apiClient.post('/auth/register', { name, email, password });
+    // Support both { data: { token, user } } and { token, user } response shapes
+    const token = res.data?.data?.token ?? res.data?.token;
+    const newUser = res.data?.data?.user ?? res.data?.user;
+    saveToken(token);
+    setUser(newUser);
+    return newUser;
   }
-}
 
-async function updateUser({ name, password, imageFile }) {
-  try {
+  async function updateUser({ name, password, imageFile }) {
     const payload = imageFile ? new FormData() : { name, password };
 
     if (imageFile) {
-      payload.append("name", name);
+      payload.append('name', name);
       if (password) {
-        payload.append("password", password);
+        payload.append('password', password);
       }
-      payload.append("image", imageFile);
+      payload.append('image', imageFile);
     }
 
-    const res = await apiClient.put(
-      "/auth/profile",
-      payload,
-      imageFile
-        ? {
-            headers: {
-              "Content-Type": "multipart/form-data",
-            },
-          }
-        : undefined,
-    );
+    const res = await apiClient.put('/auth/profile', payload, imageFile
+      ? {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        }
+      : undefined);
     const updatedUser = res.data?.data?.user ?? res.data?.user ?? res.data;
     setUser(updatedUser);
     return updatedUser;
-  } catch (err) {
-    throw new Error(
-      err.response?.data?.message || err.message || "Update failed",
-    );
   }
-}
 
   async function logout() {
     try {
-      await apiClient.post("/auth/logout");
+      await apiClient.post('/auth/logout');
     } catch {
-      // Clear local auth even if the backend logout request fails.
+      // Even if the request fails, still clear local auth state
     }
     removeToken();
     setUser(null);
   }
 
   return (
-    <AuthContext.Provider
-      value={{ user, loading, login, register, updateUser, logout }}
-    >
+    <AuthContext.Provider value={{ user, loading, login, register, updateUser, logout }}>
       {children}
     </AuthContext.Provider>
   );
