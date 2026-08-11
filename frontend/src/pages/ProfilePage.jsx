@@ -27,7 +27,6 @@ export default function ProfilePage() {
 
   const fileInputRef = useRef(null);
 
-  // Revoke object URL on unmount / replacement to avoid memory leaks
   useEffect(() => {
     return () => {
       if (previewUrl) URL.revokeObjectURL(previewUrl);
@@ -86,16 +85,14 @@ export default function ProfilePage() {
     <div className="min-h-screen bg-gray-50 dark:bg-gray-950 flex items-center justify-center px-4 py-10 transition-colors">
       <div className="w-full max-w-md">
 
-        {/* Card */}
         <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 overflow-hidden transition-colors">
 
-          {/* Header banner */}
           <div className="bg-gradient-to-r from-indigo-600 to-violet-600 h-28" />
 
-          {/* Avatar section */}
+
           <div className="flex flex-col items-center -mt-14 px-8 pb-2">
 
-            {/* Clickable avatar with camera overlay */}
+       
             <div className="relative group mb-3">
               <button
                 type="button"
@@ -116,7 +113,7 @@ export default function ProfilePage() {
                 )}
               </button>
 
-              {/* Camera overlay badge on hover */}
+
               <div
                 onClick={handleAvatarClick}
                 className="absolute inset-0 rounded-full bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
@@ -126,7 +123,6 @@ export default function ProfilePage() {
               </div>
             </div>
 
-            {/* Hidden file input */}
             <input
               ref={fileInputRef}
               type="file"
@@ -135,18 +131,16 @@ export default function ProfilePage() {
               onChange={handleImageChange}
             />
 
-            {/* Name + email summary */}
             <h2 className="text-lg font-bold text-gray-900 dark:text-white leading-tight">
               {user.name}
             </h2>
             <p className="text-sm text-gray-400 dark:text-gray-500">{user.email}</p>
           </div>
 
-          {/* Form */}
           <div className="px-8 pb-8 pt-4">
             <form onSubmit={handleSave} className="space-y-4" noValidate>
 
-              {/* Name */}
+      
               <div>
                 <label
                   htmlFor="profile-name"
@@ -168,7 +162,7 @@ export default function ProfilePage() {
                 </div>
               </div>
 
-              {/* Email — read-only */}
+          
               <div>
                 <label
                   htmlFor="profile-email"
@@ -193,7 +187,7 @@ export default function ProfilePage() {
                 </p>
               </div>
 
-              {/* New password */}
+        
               <div>
                 <label
                   htmlFor="profile-password"
@@ -220,7 +214,7 @@ export default function ProfilePage() {
                 </div>
               </div>
 
-              {/* Member since — read-only info row */}
+          
               <div className="flex items-center gap-3 px-3.5 py-2.5 rounded-lg bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 transition-colors">
                 <Calendar className="w-4 h-4 text-gray-400 dark:text-gray-500 flex-shrink-0" />
                 <div>
@@ -233,7 +227,6 @@ export default function ProfilePage() {
                 </div>
               </div>
 
-              {/* Action buttons */}
               <div className="flex flex-col gap-2 pt-1">
                 <button
                   type="submit"
