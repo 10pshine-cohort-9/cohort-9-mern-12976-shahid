@@ -1,6 +1,6 @@
-import { useState, useRef, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import toast from 'react-hot-toast';
+import { useState, useRef, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import toast from "react-hot-toast";
 import {
   User,
   Mail,
@@ -10,17 +10,17 @@ import {
   Save,
   ArrowLeft,
   LogOut,
-} from 'lucide-react';
-import { useAuth } from '../context/AuthContext';
-import { formatDate } from '../utils/formatDate';
-import { getUserImage } from '../utils/userImage';
+} from "lucide-react";
+import { useAuth } from "../context/AuthContext";
+import { formatDate } from "../utils/formatDate";
+import { getUserImage } from "../utils/userImage";
 
 export default function ProfilePage() {
   const { user, updateUser, logout } = useAuth();
   const navigate = useNavigate();
 
-  const [name, setName] = useState(user?.name || '');
-  const [password, setPassword] = useState('');
+  const [name, setName] = useState(user?.name || "");
+  const [password, setPassword] = useState("");
   const [imageFile, setImageFile] = useState(null);
   const [previewUrl, setPreviewUrl] = useState(null);
   const [saving, setSaving] = useState(false);
@@ -51,7 +51,7 @@ export default function ProfilePage() {
     e.preventDefault();
 
     if (!name.trim()) {
-      toast.error('Name cannot be empty');
+      toast.error("Name cannot be empty");
       return;
     }
 
@@ -62,11 +62,15 @@ export default function ProfilePage() {
         password: password.trim() || undefined,
         imageFile: imageFile || undefined,
       });
-      setPassword('');
+      setPassword("");
       setImageFile(null);
-      toast.success('Profile updated successfully');
+      setPreviewUrl(null);
+      toast.success("Profile updated successfully");
     } catch (err) {
-      toast.error(err.response?.data?.message || 'Could not update profile. Please try again.');
+      toast.error(
+        err.response?.data?.message ||
+          "Could not update profile. Please try again.",
+      );
     } finally {
       setSaving(false);
     }
@@ -74,25 +78,20 @@ export default function ProfilePage() {
 
   async function handleLogout() {
     await logout();
-    navigate('/login');
+    navigate("/login");
   }
 
-  const initials = user.name?.charAt(0).toUpperCase() || '?';
+  const initials = user.name?.charAt(0).toUpperCase() || "?";
   const userImage = getUserImage(user);
   const avatarSrc = previewUrl || userImage;
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-950 flex items-center justify-center px-4 py-10 transition-colors">
       <div className="w-full max-w-md">
-
         <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 overflow-hidden transition-colors">
-
           <div className="bg-gradient-to-r from-indigo-600 to-violet-600 h-28" />
 
-
           <div className="flex flex-col items-center -mt-14 px-8 pb-2">
-
-       
             <div className="relative group mb-3">
               <button
                 type="button"
@@ -112,7 +111,6 @@ export default function ProfilePage() {
                   </span>
                 )}
               </button>
-
 
               <div
                 onClick={handleAvatarClick}
@@ -134,13 +132,13 @@ export default function ProfilePage() {
             <h2 className="text-lg font-bold text-gray-900 dark:text-white leading-tight">
               {user.name}
             </h2>
-            <p className="text-sm text-gray-400 dark:text-gray-500">{user.email}</p>
+            <p className="text-sm text-gray-400 dark:text-gray-500">
+              {user.email}
+            </p>
           </div>
 
           <div className="px-8 pb-8 pt-4">
             <form onSubmit={handleSave} className="space-y-4" noValidate>
-
-      
               <div>
                 <label
                   htmlFor="profile-name"
@@ -162,7 +160,6 @@ export default function ProfilePage() {
                 </div>
               </div>
 
-          
               <div>
                 <label
                   htmlFor="profile-email"
@@ -187,7 +184,6 @@ export default function ProfilePage() {
                 </p>
               </div>
 
-        
               <div>
                 <label
                   htmlFor="profile-password"
@@ -214,7 +210,6 @@ export default function ProfilePage() {
                 </div>
               </div>
 
-          
               <div className="flex items-center gap-3 px-3.5 py-2.5 rounded-lg bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 transition-colors">
                 <Calendar className="w-4 h-4 text-gray-400 dark:text-gray-500 flex-shrink-0" />
                 <div>
@@ -234,12 +229,12 @@ export default function ProfilePage() {
                   className="w-full flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600 disabled:opacity-60 text-white font-medium py-2.5 rounded-lg text-sm transition-colors"
                 >
                   <Save className="w-4 h-4" />
-                  {saving ? 'Saving…' : 'Save Changes'}
+                  {saving ? "Saving…" : "Save Changes"}
                 </button>
 
                 <button
                   type="button"
-                  onClick={() => navigate('/notes')}
+                  onClick={() => navigate("/notes")}
                   className="w-full flex items-center justify-center gap-2 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300 font-medium py-2.5 rounded-lg text-sm transition-colors"
                 >
                   <ArrowLeft className="w-4 h-4" />
@@ -257,7 +252,6 @@ export default function ProfilePage() {
               </div>
             </form>
           </div>
-
         </div>
       </div>
     </div>

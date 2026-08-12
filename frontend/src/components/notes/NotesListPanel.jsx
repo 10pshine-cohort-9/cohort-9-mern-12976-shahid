@@ -111,36 +111,44 @@ export default function NotesListPanel({
             return (
               <div
                 key={note._id}
-                onClick={() => onSelectNote(note)}
-                className={`relative px-4 py-3.5 cursor-pointer border-b border-gray-50 dark:border-gray-800 group transition-colors ${
+                className={`relative border-b border-gray-50 dark:border-gray-800 group transition-colors ${
                   isActive
-                    ? 'bg-indigo-50 dark:bg-indigo-900/20 border-l-2 border-l-indigo-500'
-                    : 'hover:bg-gray-50 dark:hover:bg-gray-800/60'
+                    ? "bg-indigo-50 dark:bg-indigo-900/20 border-l-2 border-l-indigo-500"
+                    : "hover:bg-gray-50 dark:hover:bg-gray-800/60"
                 }`}
               >
-                {/* Date */}
-                <p className="text-xs text-gray-400 dark:text-gray-500 mb-1 uppercase tracking-wide">
-                  {formatDate(note.updatedAt)}
-                </p>
-
-                {/* Title */}
-                <h3
-                  className={`text-sm font-semibold mb-1 line-clamp-1 ${
-                    isActive
-                      ? 'text-indigo-800 dark:text-indigo-300'
-                      : 'text-gray-900 dark:text-gray-100'
-                  }`}
-                >
-                  {note.title}
-                </h3>
-
-                {/* Preview */}
-                <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-2 leading-relaxed">
-                  {preview || 'No content'}
-                </p>
-
-                {/* Three-dot menu */}
+                {/* Accessible Note Selection Button */}
                 <button
+                  type="button"
+                  onClick={() => onSelectNote(note)}
+                  className="w-full text-left px-4 py-3.5 block focus:outline-none focus:ring-2 focus:ring-inset focus:ring-indigo-500/50"
+                  aria-label={`Select note: ${note.title}`}
+                >
+                  {/* Date */}
+                  <p className="text-xs text-gray-400 dark:text-gray-500 mb-1 uppercase tracking-wide">
+                    {formatDate(note.updatedAt)}
+                  </p>
+
+                  {/* Title */}
+                  <h3
+                    className={`text-sm font-semibold mb-1 line-clamp-1 ${
+                      isActive
+                        ? "text-indigo-800 dark:text-indigo-300"
+                        : "text-gray-900 dark:text-gray-100"
+                    }`}
+                  >
+                    {note.title}
+                  </h3>
+
+                  {/* Preview */}
+                  <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-2 leading-relaxed">
+                    {preview || "No content"}
+                  </p>
+                </button>
+
+                {/* Three-dot menu (Sibling, not nested) */}
+                <button
+                  type="button"
                   onClick={(e) => toggleMenu(e, note._id)}
                   className="absolute right-3 top-3 rounded p-1 text-gray-400 transition-opacity hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 md:opacity-0 md:group-hover:opacity-100"
                   aria-label="Note options"
@@ -154,6 +162,7 @@ export default function NotesListPanel({
                     onClick={(e) => e.stopPropagation()}
                   >
                     <button
+                      type="button"
                       onClick={(e) => openDeleteDialog(e, note)}
                       className="w-full text-left px-3 py-1.5 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 flex items-center gap-2"
                     >

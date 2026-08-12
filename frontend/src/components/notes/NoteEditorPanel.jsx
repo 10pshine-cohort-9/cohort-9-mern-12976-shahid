@@ -1,11 +1,11 @@
-import { useState, useEffect, useRef } from 'react';
-import { Extension, mergeAttributes } from '@tiptap/core';
-import { useEditor, EditorContent } from '@tiptap/react';
-import StarterKit from '@tiptap/starter-kit';
-import Underline from '@tiptap/extension-underline';
-import Link from '@tiptap/extension-link';
-import Image from '@tiptap/extension-image';
-import toast from 'react-hot-toast';
+import { useState, useEffect, useRef } from "react";
+import { Extension, mergeAttributes } from "@tiptap/core";
+import { useEditor, EditorContent } from "@tiptap/react";
+import StarterKit from "@tiptap/starter-kit";
+import Underline from "@tiptap/extension-underline";
+import Link from "@tiptap/extension-link";
+import Image from "@tiptap/extension-image";
+import toast from "react-hot-toast";
 import {
   AlignCenter,
   AlignLeft,
@@ -24,9 +24,10 @@ import {
   Save,
   Trash2,
   X,
-} from 'lucide-react';
-import DeleteNoteDialog from './DeleteNoteDialog';
-import { sanitizeHtml } from '../../utils/sanitizeHtml';
+} from "lucide-react";
+import DeleteNoteDialog from "./DeleteNoteDialog";
+import { sanitizeHtml } from "../../utils/sanitizeHtml";
+import PropTypes from "prop-types";
 
 // ── Toolbar button ───────────────────────────────────────────────
 function ToolbarBtn({ onClick, active, title, children }) {
@@ -40,8 +41,8 @@ function ToolbarBtn({ onClick, active, title, children }) {
       title={title}
       className={`flex-shrink-0 rounded p-1.5 text-sm transition-colors ${
         active
-          ? 'bg-indigo-100 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300'
-          : 'text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-800 dark:hover:text-gray-200'
+          ? "bg-indigo-100 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300"
+          : "text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-800 dark:hover:text-gray-200"
       }`}
     >
       {children}
@@ -53,34 +54,44 @@ function Divider() {
   return <span className="w-px h-5 bg-gray-200 dark:bg-gray-700 mx-1" />;
 }
 
-const EMPTY_EDITOR_HTML = '<p></p>';
-const DEFAULT_IMAGE_ALIGN = 'center';
-const DEFAULT_TEXT_ALIGN = 'left';
-const TEXT_ALIGNABLE_TYPES = ['paragraph', 'heading', 'blockquote', 'bulletList', 'orderedList'];
+const EMPTY_EDITOR_HTML = "<p></p>";
+const DEFAULT_IMAGE_ALIGN = "center";
+const DEFAULT_TEXT_ALIGN = "left";
+const TEXT_ALIGNABLE_TYPES = [
+  "paragraph",
+  "heading",
+  "blockquote",
+  "bulletList",
+  "orderedList",
+];
 const EDITOR_BODY_CLASS =
-  'prose prose-sm dark:prose-invert max-w-none min-h-[300px] p-4 focus:outline-none text-gray-800 dark:text-gray-100';
+  "prose prose-sm dark:prose-invert max-w-none min-h-[300px] p-4 focus:outline-none text-gray-800 dark:text-gray-100";
 const READONLY_RENDER_CLASS = `tiptap ProseMirror ${EDITOR_BODY_CLASS}`;
 
 function normalizeImageAlign(value) {
-  return ['left', 'center', 'right'].includes(value) ? value : DEFAULT_IMAGE_ALIGN;
+  return ["left", "center", "right"].includes(value)
+    ? value
+    : DEFAULT_IMAGE_ALIGN;
 }
 
 function normalizeTextAlign(value) {
-  return ['left', 'center', 'right'].includes(value) ? value : DEFAULT_TEXT_ALIGN;
+  return ["left", "center", "right"].includes(value)
+    ? value
+    : DEFAULT_TEXT_ALIGN;
 }
 
 function getImageAlignmentStyle(value) {
   const align = normalizeImageAlign(value);
 
-  if (align === 'left') {
-    return 'display: block; margin-left: 0; margin-right: auto';
+  if (align === "left") {
+    return "display: block; margin-left: 0; margin-right: auto";
   }
 
-  if (align === 'right') {
-    return 'display: block; margin-left: auto; margin-right: 0';
+  if (align === "right") {
+    return "display: block; margin-left: auto; margin-right: 0";
   }
 
-  return 'display: block; margin-left: auto; margin-right: auto';
+  return "display: block; margin-left: auto; margin-right: auto";
 }
 
 function normalizeHtmlForEditor(html) {
@@ -88,39 +99,42 @@ function normalizeHtmlForEditor(html) {
     return EMPTY_EDITOR_HTML;
   }
 
-  const htmlWithEscapedCode = html.replace(/<code>([\s\S]*?)<\/code>/gi, (_, innerHtml) => {
-    const escapedInnerHtml = innerHtml
-      .replace(/&(?!(?:[a-zA-Z]+|#\d+|#x[\da-fA-F]+);)/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;');
+  const htmlWithEscapedCode = html.replace(
+    /<code>([\s\S]*?)<\/code>/gi,
+    (_, innerHtml) => {
+      const escapedInnerHtml = innerHtml
+        .replace(/&(?!(?:[a-zA-Z]+|#\d+|#x[\da-fA-F]+);)/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;");
 
-    return `<code>${escapedInnerHtml}</code>`;
-  });
+      return `<code>${escapedInnerHtml}</code>`;
+    },
+  );
 
-  if (typeof window === 'undefined' || !window.DOMParser) {
+  if (typeof window === "undefined" || !window.DOMParser) {
     return htmlWithEscapedCode;
   }
 
   const parser = new window.DOMParser();
-  const doc = parser.parseFromString(htmlWithEscapedCode, 'text/html');
+  const doc = parser.parseFromString(htmlWithEscapedCode, "text/html");
 
   if (!doc.body.innerHTML) {
-    return html || EMPTY_EDITOR_HTML;
+    return EMPTY_EDITOR_HTML;
   }
 
   return doc.body.innerHTML || EMPTY_EDITOR_HTML;
 }
 
 function extractImageAlignments(html) {
-  if (!html || typeof window === 'undefined' || !window.DOMParser) {
+  if (!html || typeof window === "undefined" || !window.DOMParser) {
     return [];
   }
 
   const parser = new window.DOMParser();
-  const doc = parser.parseFromString(html, 'text/html');
+  const doc = parser.parseFromString(html, "text/html");
 
-  return Array.from(doc.querySelectorAll('img')).map((image) =>
-    normalizeImageAlign(image.getAttribute('data-align'))
+  return Array.from(doc.querySelectorAll("img")).map((image) =>
+    normalizeImageAlign(image.getAttribute("data-align")),
   );
 }
 
@@ -134,7 +148,7 @@ function applyImageAlignmentsToEditor(editor, html) {
     let imageIndex = 0;
 
     state.doc.descendants((node, pos) => {
-      if (node.type.name !== 'image') {
+      if (node.type.name !== "image") {
         return true;
       }
 
@@ -162,41 +176,46 @@ function applyImageAlignmentsToEditor(editor, html) {
 }
 
 function normalizeHtmlForViewer(html) {
-  if (!html || typeof window === 'undefined' || !window.DOMParser) {
-    return sanitizeHtml(html || '');
+  if (!html || typeof window === "undefined" || !window.DOMParser) {
+    return sanitizeHtml(html || "");
   }
 
   const parser = new window.DOMParser();
-  const doc = parser.parseFromString(html, 'text/html');
+  const doc = parser.parseFromString(html, "text/html");
 
-  doc.querySelectorAll('img').forEach((image) => {
-    const align = normalizeImageAlign(image.getAttribute('data-align'));
-    const mergedStyle = [image.getAttribute('style')?.trim().replace(/;$/, ''), getImageAlignmentStyle(align)]
+  doc.querySelectorAll("img").forEach((image) => {
+    const align = normalizeImageAlign(image.getAttribute("data-align"));
+    const mergedStyle = [
+      image.getAttribute("style")?.trim().replace(/;$/, ""),
+      getImageAlignmentStyle(align),
+    ]
       .filter(Boolean)
-      .join('; ');
+      .join("; ");
 
-    image.setAttribute('data-align', align);
-    image.setAttribute('style', mergedStyle);
+    image.setAttribute("data-align", align);
+    image.setAttribute("style", mergedStyle);
   });
 
-  return sanitizeHtml(doc.body.innerHTML || '');
+  return sanitizeHtml(doc.body.innerHTML || "");
 }
 
 function setEditorContentWithImageAlignments(editor, html) {
-  if (!editor) return;
+  if (!editor || editor.isDestroyed) return;
 
   editor.commands.setContent(html);
   applyImageAlignmentsToEditor(editor, html);
 
-  if (typeof window !== 'undefined') {
-    window.setTimeout(() => {
-      applyImageAlignmentsToEditor(editor, html);
+  if (typeof window !== "undefined") {
+    return window.setTimeout(() => {
+      if (!editor.isDestroyed) {
+        applyImageAlignmentsToEditor(editor, html);
+      }
     }, 0);
   }
 }
 
 const TextAlignExtension = Extension.create({
-  name: 'textAlign',
+  name: "textAlign",
 
   addGlobalAttributes() {
     return [
@@ -207,7 +226,8 @@ const TextAlignExtension = Extension.create({
             default: DEFAULT_TEXT_ALIGN,
             parseHTML: (element) =>
               normalizeTextAlign(
-                element.style?.textAlign || element.getAttribute('data-text-align')
+                element.style?.textAlign ||
+                  element.getAttribute("data-text-align"),
               ),
             renderHTML: (attributes) => {
               const textAlign = normalizeTextAlign(attributes.textAlign);
@@ -217,7 +237,7 @@ const TextAlignExtension = Extension.create({
               }
 
               return {
-                'data-text-align': textAlign,
+                "data-text-align": textAlign,
                 style: `text-align: ${textAlign}`,
               };
             },
@@ -232,17 +252,17 @@ const RichImage = Image.extend({
   parseHTML() {
     return [
       {
-        tag: 'img[src]',
+        tag: "img[src]",
         getAttrs: (element) => {
-          if (!element || typeof element.getAttribute !== 'function') {
+          if (!element || typeof element.getAttribute !== "function") {
             return false;
           }
 
           return {
-            src: element.getAttribute('src'),
-            alt: element.getAttribute('alt'),
-            title: element.getAttribute('title'),
-            align: normalizeImageAlign(element.getAttribute('data-align')),
+            src: element.getAttribute("src"),
+            alt: element.getAttribute("alt"),
+            title: element.getAttribute("title"),
+            align: normalizeImageAlign(element.getAttribute("data-align")),
           };
         },
       },
@@ -254,28 +274,41 @@ const RichImage = Image.extend({
       ...this.parent?.(),
       align: {
         default: DEFAULT_IMAGE_ALIGN,
-        parseHTML: (element) => normalizeImageAlign(element.getAttribute('data-align')),
+        parseHTML: (element) =>
+          normalizeImageAlign(element.getAttribute("data-align")),
         renderHTML: (attributes) => ({
-          'data-align': normalizeImageAlign(attributes.align),
+          "data-align": normalizeImageAlign(attributes.align),
         }),
       },
     };
   },
 
   renderHTML({ HTMLAttributes }) {
-    const { align, class: className, style, ...restAttributes } = HTMLAttributes;
+    const {
+      align,
+      class: className,
+      style,
+      ...restAttributes
+    } = HTMLAttributes;
     const normalizedAlign = normalizeImageAlign(align);
-    const mergedStyle = [style?.trim().replace(/;$/, ''), getImageAlignmentStyle(normalizedAlign)]
+    const mergedStyle = [
+      style?.trim().replace(/;$/, ""),
+      getImageAlignmentStyle(normalizedAlign),
+    ]
       .filter(Boolean)
-      .join('; ');
+      .join("; ");
 
     return [
-      'img',
+      "img",
       mergeAttributes(this.options.HTMLAttributes, restAttributes, {
-        'data-align': normalizedAlign,
-        class: ['note-editor-image', `note-editor-image--${normalizedAlign}`, className]
+        "data-align": normalizedAlign,
+        class: [
+          "note-editor-image",
+          `note-editor-image--${normalizedAlign}`,
+          className,
+        ]
           .filter(Boolean)
-          .join(' '),
+          .join(" "),
         style: mergedStyle,
       }),
     ];
@@ -290,22 +323,91 @@ function PromptDialog({
   value,
   placeholder,
   multiline = false,
-  confirmLabel = 'Apply',
+  confirmLabel = "Apply",
   onChange,
   onClose,
   onConfirm,
 }) {
+  const dialogRef = useRef(null);
+  const previousFocusRef = useRef(null);
+
+  useEffect(() => {
+    if (!open) return;
+
+    // Save previous focus
+    previousFocusRef.current = document.activeElement;
+
+    // Move initial focus to the input/textarea
+    if (dialogRef.current) {
+      const input = dialogRef.current.querySelector("input, textarea");
+      if (input) input.focus();
+    }
+
+    const handleKeyDown = (e) => {
+      // Handle Escape key
+      if (e.key === "Escape") {
+        e.stopPropagation();
+        onClose();
+        return;
+      }
+
+      // Trap focus within the dialog
+      if (e.key === "Tab" && dialogRef.current) {
+        const focusableElements = dialogRef.current.querySelectorAll(
+          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
+        );
+        const firstElement = focusableElements[0];
+        const lastElement = focusableElements[focusableElements.length - 1];
+
+        if (e.shiftKey && document.activeElement === firstElement) {
+          e.preventDefault();
+          lastElement.focus();
+        } else if (!e.shiftKey && document.activeElement === lastElement) {
+          e.preventDefault();
+          firstElement.focus();
+        }
+      }
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+      // Restore focus when the dialog closes
+      if (previousFocusRef.current) {
+        previousFocusRef.current.focus();
+      }
+    };
+  }, [open, onClose]);
+
   if (!open) return null;
 
-  const InputTag = multiline ? 'textarea' : 'input';
+  const InputTag = multiline ? "textarea" : "input";
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-950/45 p-4">
-      <div className="w-full max-w-lg rounded-2xl border border-gray-200 bg-white shadow-2xl dark:border-gray-700 dark:bg-gray-900">
+      <div
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="prompt-dialog-title"
+        aria-describedby={description ? "prompt-dialog-desc" : undefined}
+        className="w-full max-w-lg rounded-2xl border border-gray-200 bg-white shadow-2xl dark:border-gray-700 dark:bg-gray-900"
+      >
         <div className="border-b border-gray-100 px-5 py-4 dark:border-gray-800">
-          <h3 className="text-base font-semibold text-gray-900 dark:text-white">{title}</h3>
+          <h3
+            id="prompt-dialog-title"
+            className="text-base font-semibold text-gray-900 dark:text-white"
+          >
+            {title}
+          </h3>
           {description && (
-            <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">{description}</p>
+            <p
+              id="prompt-dialog-desc"
+              className="mt-1 text-sm text-gray-500 dark:text-gray-400"
+            >
+              {description}
+            </p>
           )}
         </div>
 
@@ -351,6 +453,20 @@ function PromptDialog({
   );
 }
 
+PromptDialog.propTypes = {
+  open: PropTypes.bool.isRequired,
+  title: PropTypes.string.isRequired,
+  description: PropTypes.string,
+  label: PropTypes.string.isRequired,
+  value: PropTypes.string.isRequired,
+  placeholder: PropTypes.string,
+  multiline: PropTypes.bool,
+  confirmLabel: PropTypes.string,
+  onChange: PropTypes.func.isRequired,
+  onClose: PropTypes.func.isRequired,
+  onConfirm: PropTypes.func.isRequired,
+};
+
 // ── Toolbar ──────────────────────────────────────────────────────
 function Toolbar({
   editor,
@@ -384,21 +500,21 @@ function Toolbar({
       {/* Headings */}
       <ToolbarBtn
         onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()}
-        active={editor.isActive('heading', { level: 1 })}
+        active={editor.isActive("heading", { level: 1 })}
         title="Heading 1"
       >
         <span className="text-xs font-bold">H1</span>
       </ToolbarBtn>
       <ToolbarBtn
         onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
-        active={editor.isActive('heading', { level: 2 })}
+        active={editor.isActive("heading", { level: 2 })}
         title="Heading 2"
       >
         <span className="text-xs font-bold">H2</span>
       </ToolbarBtn>
       <ToolbarBtn
         onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}
-        active={editor.isActive('heading', { level: 3 })}
+        active={editor.isActive("heading", { level: 3 })}
         title="Heading 3"
       >
         <span className="text-xs font-bold">H3</span>
@@ -408,35 +524,35 @@ function Toolbar({
 
       <ToolbarBtn
         onClick={() => editor.chain().focus().toggleBold().run()}
-        active={editor.isActive('bold')}
+        active={editor.isActive("bold")}
         title="Bold"
       >
         <Bold className="w-3.5 h-3.5" />
       </ToolbarBtn>
       <ToolbarBtn
         onClick={() => editor.chain().focus().toggleItalic().run()}
-        active={editor.isActive('italic')}
+        active={editor.isActive("italic")}
         title="Italic"
       >
         <Italic className="w-3.5 h-3.5" />
       </ToolbarBtn>
       <ToolbarBtn
         onClick={() => editor.chain().focus().toggleUnderline().run()}
-        active={editor.isActive('underline')}
+        active={editor.isActive("underline")}
         title="Underline"
       >
         <UnderlineIcon className="w-3.5 h-3.5" />
       </ToolbarBtn>
       <ToolbarBtn
         onClick={() => editor.chain().focus().toggleStrike().run()}
-        active={editor.isActive('strike')}
+        active={editor.isActive("strike")}
         title="Strikethrough"
       >
         <Strikethrough className="w-3.5 h-3.5" />
       </ToolbarBtn>
       <ToolbarBtn
         onClick={() => editor.chain().focus().toggleCode().run()}
-        active={editor.isActive('code')}
+        active={editor.isActive("code")}
         title="Inline code"
       >
         <Code className="w-3.5 h-3.5" />
@@ -446,14 +562,14 @@ function Toolbar({
 
       <ToolbarBtn
         onClick={() => editor.chain().focus().toggleBulletList().run()}
-        active={editor.isActive('bulletList')}
+        active={editor.isActive("bulletList")}
         title="Bullet list"
       >
         <List className="w-3.5 h-3.5" />
       </ToolbarBtn>
       <ToolbarBtn
         onClick={() => editor.chain().focus().toggleOrderedList().run()}
-        active={editor.isActive('orderedList')}
+        active={editor.isActive("orderedList")}
         title="Ordered list"
       >
         <ListOrdered className="w-3.5 h-3.5" />
@@ -462,22 +578,34 @@ function Toolbar({
       <Divider />
 
       <ToolbarBtn
-        onClick={() => setTextAlign('left')}
-        active={selectedImage ? selectedImage.align === 'left' : editor.isActive({ textAlign: 'left' })}
+        onClick={() => setTextAlign("left")}
+        active={
+          selectedImage
+            ? selectedImage.align === "left"
+            : editor.isActive({ textAlign: "left" })
+        }
         title="Align left"
       >
         <AlignLeft className="w-3.5 h-3.5" />
       </ToolbarBtn>
       <ToolbarBtn
-        onClick={() => setTextAlign('center')}
-        active={selectedImage ? selectedImage.align === 'center' : editor.isActive({ textAlign: 'center' })}
+        onClick={() => setTextAlign("center")}
+        active={
+          selectedImage
+            ? selectedImage.align === "center"
+            : editor.isActive({ textAlign: "center" })
+        }
         title="Align center"
       >
         <AlignCenter className="w-3.5 h-3.5" />
       </ToolbarBtn>
       <ToolbarBtn
-        onClick={() => setTextAlign('right')}
-        active={selectedImage ? selectedImage.align === 'right' : editor.isActive({ textAlign: 'right' })}
+        onClick={() => setTextAlign("right")}
+        active={
+          selectedImage
+            ? selectedImage.align === "right"
+            : editor.isActive({ textAlign: "right" })
+        }
         title="Align right"
       >
         <AlignRight className="w-3.5 h-3.5" />
@@ -487,7 +615,7 @@ function Toolbar({
 
       <ToolbarBtn
         onClick={onOpenLinkDialog}
-        active={editor.isActive('link')}
+        active={editor.isActive("link")}
         title="Insert link"
       >
         <LinkIcon className="w-3.5 h-3.5" />
@@ -506,12 +634,8 @@ function Toolbar({
       >
         <span className="text-[10px] font-semibold">IMG</span>
       </ToolbarBtn>
-      <ToolbarBtn
-        onClick={onOpenHtmlDialog}
-        active={false}
-        title="Render HTML"
-      >
-        <span className="text-[10px] font-semibold">{'<>'}</span>
+      <ToolbarBtn onClick={onOpenHtmlDialog} active={false} title="Render HTML">
+        <span className="text-[10px] font-semibold">{"<>"}</span>
       </ToolbarBtn>
 
       <Divider />
@@ -537,12 +661,14 @@ function Toolbar({
 // ── NoteEditorPanel ───────────────────────────────────────────────
 export default function NoteEditorPanel({ note, onSave, onDiscard, onDelete }) {
   const isNew = note === null;
-  const initialHtml = normalizeHtmlForEditor(note?.content || EMPTY_EDITOR_HTML);
+  const initialHtml = normalizeHtmlForEditor(
+    note?.content || EMPTY_EDITOR_HTML,
+  );
 
-  const [title, setTitle] = useState(() => note?.title || '');
+  const [title, setTitle] = useState(() => note?.title || "");
   const [htmlValue, setHtmlValue] = useState(() => initialHtml);
-  const [titleError, setTitleError] = useState('');
-  const [contentError, setContentError] = useState('');
+  const [titleError, setTitleError] = useState("");
+  const [contentError, setContentError] = useState("");
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [isEditing, setIsEditing] = useState(isNew);
@@ -572,11 +698,11 @@ export default function NoteEditorPanel({ note, onSave, onDiscard, onDelete }) {
         allowBase64: true,
       }),
     ],
-    content: '',
+    content: "",
     editorProps: {
       attributes: {
         class:
-          'prose prose-sm dark:prose-invert max-w-none min-h-[300px] p-4 focus:outline-none text-gray-800 dark:text-gray-100',
+          "prose prose-sm dark:prose-invert max-w-none min-h-[300px] p-4 focus:outline-none text-gray-800 dark:text-gray-100",
       },
     },
     editable: false,
@@ -598,12 +724,12 @@ export default function NoteEditorPanel({ note, onSave, onDiscard, onDelete }) {
     if (!editor) return undefined;
 
     const syncSelectedImage = () => {
-      if (!editor.isActive('image')) {
+      if (!editor.isActive("image")) {
         setSelectedImage(null);
         return;
       }
 
-      const attributes = editor.getAttributes('image');
+      const attributes = editor.getAttributes("image");
       const imageSelectionPosition = editor.state.selection.from;
 
       setSelectedImage({
@@ -613,23 +739,23 @@ export default function NoteEditorPanel({ note, onSave, onDiscard, onDelete }) {
     };
 
     syncSelectedImage();
-    editor.on('selectionUpdate', syncSelectedImage);
-    editor.on('update', syncSelectedImage);
+    editor.on("selectionUpdate", syncSelectedImage);
+    editor.on("update", syncSelectedImage);
 
     return () => {
-      editor.off('selectionUpdate', syncSelectedImage);
-      editor.off('update', syncSelectedImage);
+      editor.off("selectionUpdate", syncSelectedImage);
+      editor.off("update", syncSelectedImage);
     };
   }, [editor]);
 
   function resetValidationState() {
-    setTitleError('');
-    setContentError('');
+    setTitleError("");
+    setContentError("");
   }
 
   function restoreOriginalNote() {
     const nextHtml = normalizeHtmlForEditor(note?.content || EMPTY_EDITOR_HTML);
-    setTitle(note?.title || '');
+    setTitle(note?.title || "");
     setHtmlValue(nextHtml);
     setEditorContentWithImageAlignments(editor, nextHtml);
     resetValidationState();
@@ -651,13 +777,15 @@ export default function NoteEditorPanel({ note, onSave, onDiscard, onDelete }) {
 
     setPromptDialog({
       ...config,
-      value: config.value || '',
+      value: config.value || "",
       selection,
     });
   }
 
   function syncEditorWithHtml(nextHtml) {
-    const preparedHtml = normalizeHtmlForEditor(nextHtml.trim() ? nextHtml : EMPTY_EDITOR_HTML);
+    const preparedHtml = normalizeHtmlForEditor(
+      nextHtml.trim() ? nextHtml : EMPTY_EDITOR_HTML,
+    );
 
     try {
       setEditorContentWithImageAlignments(editor, preparedHtml);
@@ -665,7 +793,7 @@ export default function NoteEditorPanel({ note, onSave, onDiscard, onDelete }) {
       setHtmlValue(normalizedHtml);
       return normalizedHtml;
     } catch {
-      toast.error('The HTML could not be parsed. Please fix it and try again.');
+      toast.error("The HTML could not be parsed. Please fix it and try again.");
       return null;
     }
   }
@@ -679,7 +807,7 @@ export default function NoteEditorPanel({ note, onSave, onDiscard, onDelete }) {
     const syncedHtml = syncEditorWithHtml(htmlValue);
     if (!syncedHtml) return;
 
-    setContentError('');
+    setContentError("");
     setIsHtmlMode(false);
   }
 
@@ -700,24 +828,24 @@ export default function NoteEditorPanel({ note, onSave, onDiscard, onDelete }) {
 
   function handleOpenLinkDialog() {
     openPromptDialog({
-      type: 'link',
-      title: 'Insert link',
-      description: 'Add a URL or leave it empty to remove the current link.',
-      label: 'URL',
-      placeholder: 'https://example.com',
-      confirmLabel: 'Apply',
-      value: editor?.getAttributes('link').href || '',
+      type: "link",
+      title: "Insert link",
+      description: "Add a URL or leave it empty to remove the current link.",
+      label: "URL",
+      placeholder: "https://example.com",
+      confirmLabel: "Apply",
+      value: editor?.getAttributes("link").href || "",
     });
   }
 
   function handleOpenImageUrlDialog() {
     openPromptDialog({
-      type: 'image',
-      title: 'Insert image by URL',
-      description: 'Paste a direct image URL to add it to the note.',
-      label: 'Image URL',
-      placeholder: 'https://images.example.com/photo.jpg',
-      confirmLabel: 'Insert image',
+      type: "image",
+      title: "Insert image by URL",
+      description: "Paste a direct image URL to add it to the note.",
+      label: "Image URL",
+      placeholder: "https://images.example.com/photo.jpg",
+      confirmLabel: "Insert image",
     });
   }
 
@@ -725,17 +853,18 @@ export default function NoteEditorPanel({ note, onSave, onDiscard, onDelete }) {
     if (!editor) return;
 
     const { from, to } = editor.state.selection;
-    const selectedText = editor.state.doc.textBetween(from, to, '\n');
+    const selectedText = editor.state.doc.textBetween(from, to, "\n");
 
     openPromptDialog({
-      type: 'html',
-      title: 'Render HTML',
-      description: 'Paste HTML and it will be inserted directly into the document.',
-      label: 'HTML snippet',
-      placeholder: '<h1>Hello world</h1>',
-      confirmLabel: 'Render',
+      type: "html",
+      title: "Render HTML",
+      description:
+        "Paste HTML and it will be inserted directly into the document.",
+      label: "HTML snippet",
+      placeholder: "<h1>Hello world</h1>",
+      confirmLabel: "Render",
       multiline: true,
-      value: selectedText || '',
+      value: selectedText || "",
     });
   }
 
@@ -746,82 +875,92 @@ export default function NoteEditorPanel({ note, onSave, onDiscard, onDelete }) {
   function restoreDialogSelection() {
     if (!editor || !promptDialog?.selection) return editor?.chain().focus();
 
-    return editor
-      .chain()
-      .focus()
-      .setTextSelection(promptDialog.selection);
+    return editor.chain().focus().setTextSelection(promptDialog.selection);
   }
 
-  function handlePromptConfirm() {
-    if (!editor || !promptDialog) return;
+function handlePromptConfirm() {
+  if (!editor || !promptDialog) return;
 
-    const nextValue = promptDialog.value.trim();
+  const nextValue = promptDialog.value.trim();
 
-    if (promptDialog.type === 'link') {
-      const command = restoreDialogSelection()?.extendMarkRange('link');
-
-      if (!nextValue) {
-        command?.unsetLink().run();
-        closePromptDialog();
-        return;
-      }
-
-      command
-        ?.setLink({ href: nextValue, target: '_blank', rel: 'noopener noreferrer' })
-        .run();
-      closePromptDialog();
-      return;
-    }
-
-    if (promptDialog.type === 'image') {
-      if (!nextValue) {
-        toast.error('Please provide an image URL.');
-        return;
-      }
-
-      restoreDialogSelection()
-        ?.setImage({
-          src: nextValue,
-          alt: 'Inserted image',
-          align: DEFAULT_IMAGE_ALIGN,
-        })
-        .run();
-      closePromptDialog();
-      return;
-    }
+  if (promptDialog.type === "link") {
+    const command = restoreDialogSelection()?.extendMarkRange("link");
 
     if (!nextValue) {
-      toast.error('Please provide some HTML to render.');
+      command?.unsetLink().run();
+      closePromptDialog();
       return;
     }
 
-    const normalizedHtml = normalizeHtmlForEditor(nextValue);
-
-    try {
-      editor
-        .chain()
-        .focus()
-        .insertContentAt(
-          promptDialog.selection || {
-            from: editor.state.selection.from,
-            to: editor.state.selection.to,
-          },
-          normalizedHtml
-        )
-        .run();
-      closePromptDialog();
-    } catch {
-      toast.error('The HTML could not be rendered. Please check the markup.');
-    }
+    command
+      ?.setLink({
+        href: nextValue,
+        target: "_blank",
+        rel: "noopener noreferrer",
+      })
+      .run();
+    closePromptDialog();
+    return;
   }
+
+  if (promptDialog.type === "image") {
+    let isValidImage = false;
+
+    if (nextValue) {
+      try {
+        // window.location.origin allows valid relative paths to pass parsing
+        const url = new URL(nextValue, window.location.origin);
+        if (url.protocol === "http:" || url.protocol === "https:") {
+          isValidImage = true;
+        } else if (url.protocol === "data:") {
+          // Ensure data URIs are strictly images
+          isValidImage = url.pathname.startsWith("image/");
+        }
+      } catch (e) {
+        isValidImage = false; // Fails URL parsing
+      }
+    }
+
+    if (!nextValue || !isValidImage) {
+      toast.error("Please provide an image URL.");
+      return;
+    }
+
+    restoreDialogSelection()
+      ?.setImage({
+        src: nextValue,
+        alt: "Inserted image",
+        align: DEFAULT_IMAGE_ALIGN, // Assumes DEFAULT_IMAGE_ALIGN is in scope
+      })
+      .run();
+    closePromptDialog();
+    return;
+  }
+}
+
 
   function openImagePicker() {
     imageInputRef.current?.click();
   }
 
-  function handleImageSelected(event) {
+function handleImageSelected(event) {
     const file = event.target.files?.[0];
     if (!file) return;
+
+    // Validate MIME type
+    if (!file.type.startsWith('image/')) {
+      toast.error('Please select a valid image file.');
+      event.target.value = '';
+      return;
+    }
+
+    // Validate file size (e.g., 5MB limit for Data URIs)
+    const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+    if (file.size > MAX_FILE_SIZE) {
+      toast.error('Image is too large. Please select a file under 5MB.');
+      event.target.value = '';
+      return;
+    }
 
     const reader = new FileReader();
     reader.onload = () => {
@@ -844,6 +983,7 @@ export default function NoteEditorPanel({ note, onSave, onDiscard, onDelete }) {
     event.target.value = '';
   }
 
+
   function updateSelectedImageAttributes(attributes) {
     if (!editor || !selectedImage) return;
 
@@ -851,7 +991,7 @@ export default function NoteEditorPanel({ note, onSave, onDiscard, onDelete }) {
       .chain()
       .focus()
       .setNodeSelection(selectedImage.pos)
-      .updateAttributes('image', attributes)
+      .updateAttributes("image", attributes)
       .run();
   }
 
@@ -861,27 +1001,27 @@ export default function NoteEditorPanel({ note, onSave, onDiscard, onDelete }) {
 
   async function handleSave() {
     const trimmedTitle = title.trim();
-    const currentHtml = isHtmlMode ? htmlValue : editor?.getHTML() || '';
+    const currentHtml = isHtmlMode ? htmlValue : editor?.getHTML() || "";
     const html = isHtmlMode ? syncEditorWithHtml(currentHtml) : currentHtml;
     if (!html) return;
-    const hasContent = html && html !== '<p></p>' && html.trim() !== '';
+    const hasContent = html && html !== "<p></p>" && html.trim() !== "";
 
     let valid = true;
     if (!trimmedTitle) {
-      setTitleError('Title is required');
+      setTitleError("Title is required");
       valid = false;
     } else {
-      setTitleError('');
+      setTitleError("");
     }
     if (!hasContent) {
-      setContentError('Content is required');
+      setContentError("Content is required");
       valid = false;
     } else {
-      setContentError('');
+      setContentError("");
     }
 
     if (!valid) {
-      toast.error('Please complete the required fields.');
+      toast.error("Please complete the required fields.");
       return;
     }
 
@@ -891,21 +1031,22 @@ export default function NoteEditorPanel({ note, onSave, onDiscard, onDelete }) {
       if (!isNew) {
         setIsEditing(false);
       }
-      toast.success(isNew ? 'Note created' : 'Note updated');
+      toast.success(isNew ? "Note created" : "Note updated");
     } catch (err) {
-      toast.error(err?.response?.data?.message || 'Could not save note.');
+      toast.error(err?.response?.data?.message || "Could not save note.");
     } finally {
       setSaving(false);
     }
   }
 
-  async function handleDelete() {
+async function handleDelete() {
     if (!note || !onDelete) return;
 
     setDeleting(true);
     try {
       await onDelete(note);
       setShowDeleteDialog(false);
+    } catch (error) {
     } finally {
       setDeleting(false);
     }
@@ -916,7 +1057,7 @@ export default function NoteEditorPanel({ note, onSave, onDiscard, onDelete }) {
       {/* Breadcrumb / action bar */}
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-gray-100 px-4 py-3 text-xs text-gray-400 dark:border-gray-700 dark:text-gray-500 md:px-6">
         <span className="truncate">
-          My Notes {note?.title ? `› ${note.title}` : '› New note'}
+          My Notes {note?.title ? `› ${note.title}` : "› New note"}
         </span>
         <div className="flex flex-wrap items-center justify-end gap-2">
           {!isNew && (
@@ -936,8 +1077,8 @@ export default function NoteEditorPanel({ note, onSave, onDiscard, onDelete }) {
                 onClick={handleSwitchToRichTextMode}
                 className={`px-2.5 py-1 rounded-md transition-colors ${
                   !isHtmlMode
-                    ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm'
-                    : 'text-gray-500 dark:text-gray-400'
+                    ? "bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm"
+                    : "text-gray-500 dark:text-gray-400"
                 }`}
               >
                 Rich Text
@@ -947,8 +1088,8 @@ export default function NoteEditorPanel({ note, onSave, onDiscard, onDelete }) {
                 onClick={handleSwitchToHtmlMode}
                 className={`px-2.5 py-1 rounded-md transition-colors ${
                   isHtmlMode
-                    ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm'
-                    : 'text-gray-500 dark:text-gray-400'
+                    ? "bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm"
+                    : "text-gray-500 dark:text-gray-400"
                 }`}
               >
                 HTML
@@ -960,7 +1101,7 @@ export default function NoteEditorPanel({ note, onSave, onDiscard, onDelete }) {
             className="flex items-center gap-1 rounded px-2 py-1 text-xs text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600 dark:text-gray-500 dark:hover:bg-gray-800 dark:hover:text-gray-300"
           >
             <X className="w-3 h-3" />
-            {isEditing ? (isNew ? 'Discard' : 'Cancel') : 'Close'}
+            {isEditing ? (isNew ? "Discard" : "Cancel") : "Close"}
           </button>
           {isEditing ? (
             <button
@@ -969,7 +1110,7 @@ export default function NoteEditorPanel({ note, onSave, onDiscard, onDelete }) {
               className="flex items-center gap-1.5 rounded-lg bg-indigo-600 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-indigo-700 disabled:opacity-50"
             >
               <Save className="w-3 h-3" />
-              {saving ? 'Saving…' : 'Save'}
+              {saving ? "Saving…" : "Save"}
             </button>
           ) : (
             <button
@@ -991,21 +1132,23 @@ export default function NoteEditorPanel({ note, onSave, onDiscard, onDelete }) {
               value={title}
               onChange={(e) => {
                 setTitle(e.target.value);
-                setTitleError('');
+                setTitleError("");
               }}
               placeholder="Note title…"
               maxLength={200}
               className={`w-full border-0 bg-transparent text-2xl font-bold text-gray-900 outline-none placeholder-gray-300 dark:text-white dark:placeholder-gray-600 ${
-                titleError ? 'border-b border-red-400' : ''
+                titleError ? "border-b border-red-400" : ""
               }`}
             />
             {titleError && (
-              <p className="mt-1 text-xs text-red-500 dark:text-red-400">{titleError}</p>
+              <p className="mt-1 text-xs text-red-500 dark:text-red-400">
+                {titleError}
+              </p>
             )}
           </>
         ) : (
           <h1 className="break-words text-2xl font-bold text-gray-900 dark:text-white">
-            {note?.title || 'Untitled note'}
+            {note?.title || "Untitled note"}
           </h1>
         )}
       </div>
@@ -1016,7 +1159,7 @@ export default function NoteEditorPanel({ note, onSave, onDiscard, onDelete }) {
           <span>
             <span className="text-gray-500 dark:text-gray-400 font-medium">
               Last modified
-            </span>{' '}
+            </span>{" "}
             {formatDateTime(note.updatedAt)}
           </span>
         </div>
@@ -1052,7 +1195,7 @@ export default function NoteEditorPanel({ note, onSave, onDiscard, onDelete }) {
                 value={htmlValue}
                 onChange={(e) => {
                   setHtmlValue(e.target.value);
-                  setContentError('');
+                  setContentError("");
                 }}
                 spellCheck={false}
                 className="h-full min-h-[300px] w-full resize-none border-0 bg-white p-4 font-mono text-sm text-gray-800 outline-none dark:bg-gray-900 dark:text-gray-100"
@@ -1074,7 +1217,9 @@ export default function NoteEditorPanel({ note, onSave, onDiscard, onDelete }) {
           <div
             className={`${READONLY_RENDER_CLASS} h-full pointer-events-auto select-text`}
             dangerouslySetInnerHTML={{
-              __html: normalizeHtmlForViewer(note?.content || htmlValue || EMPTY_EDITOR_HTML),
+              __html: normalizeHtmlForViewer(
+                note?.content || htmlValue || EMPTY_EDITOR_HTML,
+              ),
             }}
           />
         </div>
@@ -1092,7 +1237,7 @@ export default function NoteEditorPanel({ note, onSave, onDiscard, onDelete }) {
         title={promptDialog?.title}
         description={promptDialog?.description}
         label={promptDialog?.label}
-        value={promptDialog?.value || ''}
+        value={promptDialog?.value || ""}
         placeholder={promptDialog?.placeholder}
         multiline={Boolean(promptDialog?.multiline)}
         confirmLabel={promptDialog?.confirmLabel}
@@ -1114,12 +1259,12 @@ export default function NoteEditorPanel({ note, onSave, onDiscard, onDelete }) {
 }
 
 function formatDateTime(dateString) {
-  if (!dateString) return '';
+  if (!dateString) return "";
   return new Date(dateString).toLocaleString(undefined, {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
   });
 }

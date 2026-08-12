@@ -1,38 +1,53 @@
-import { useState, useEffect, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
-import toast from 'react-hot-toast';
-import { FileText, Plus, User } from 'lucide-react';
-import apiClient from '../../api/apiClient';
-import Sidebar from './Sidebar';
-import Loader from '../common/Loader';
-import NotesListPanel from '../notes/NotesListPanel';
-import NoteEditorPanel from '../notes/NoteEditorPanel';
-import EmptyEditorState from '../notes/EmptyEditorState';
+import { useState, useEffect, useCallback, useRef } from "react";
+import { useNavigate } from "react-router-dom";
+import toast from "react-hot-toast";
+import { FileText, Plus, User } from "lucide-react";
+import apiClient from "../../api/apiClient";
+import Sidebar from "./Sidebar";
+import Loader from "../common/Loader";
+import NotesListPanel from "../notes/NotesListPanel";
+import NoteEditorPanel from "../notes/NoteEditorPanel";
+import EmptyEditorState from "../notes/EmptyEditorState";
 
-// The 3-column layout: [Sidebar 220px] [Notes list 320px] [Editor panel — rest]
 export default function AppShell() {
   const navigate = useNavigate();
   const [notes, setNotes] = useState([]);
   const [loadingNotes, setLoadingNotes] = useState(true);
-  const [fetchError, setFetchError] = useState('');
-  const [searchQuery, setSearchQuery] = useState('');
+  const [fetchError, setFetchError] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
   const [activeNoteId, setActiveNoteId] = useState(null);
   const [activeNote, setActiveNote] = useState(null);
   const [loadingNote, setLoadingNote] = useState(false);
+  const abortControllerRef = useRef(null);
 
-  const loadNotes = useCallback(async (search = '') => {
+  const loadNotes = useCallback(async (search = "") => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
+
     setLoadingNotes(true);
-    setFetchError('');
+    setFetchError("");
+
     try {
       const params = search.trim() ? { search: search.trim() } : {};
-      const res = await apiClient.get('/notes', { params });
-      // Support both { data: { notes } } and { notes } response shapes
+      const res = await apiClient.get("/notes", {
+        params,
+        signal: controller.signal,
+      });
       const notes = res.data?.data?.notes ?? res.data?.notes ?? [];
       setNotes(notes);
     } catch (err) {
-      setFetchError(err.response?.data?.message || 'Could not load notes.');
+      if (err.name === "CanceledError" || err.code === "ERR_CANCELED") {
+        return;
+      }
+      setFetchError(err.response?.data?.message || "Could not load notes.");
     } finally {
-      setLoadingNotes(false);
+      if (abortControllerRef.current === controller) {
+        setLoadingNotes(false);
+      }
     }
   }, []);
 
@@ -42,7 +57,7 @@ export default function AppShell() {
   }, [searchQuery, loadNotes]);
 
   useEffect(() => {
-    if (!activeNoteId || activeNoteId === 'new') {
+    if (!activeNoteId || activeNoteId === "new") {
       return;
     }
     let isCancelled = false;
@@ -63,7 +78,7 @@ export default function AppShell() {
         }
         setActiveNoteId(null);
         setActiveNote(null);
-        toast.error(err.response?.data?.message || 'Could not load that note.');
+        toast.error(err.response?.data?.message || "Could not load that note.");
       })
       .finally(() => {
         if (!isCancelled) {
@@ -83,25 +98,25 @@ export default function AppShell() {
   }
 
   function handleNewNote() {
-    setActiveNoteId('new');
+    setActiveNoteId("new");
     setActiveNote(null);
     setLoadingNote(false);
   }
 
   function mergeSavedContent(noteFromApi, fallbackFields) {
     return {
-      ...noteFromApi,
       ...fallbackFields,
+      ...noteFromApi,
     };
   }
 
   async function handleSaveNote({ title, content }) {
-    if (activeNoteId === 'new') {
-      const res = await apiClient.post('/notes', { title, content });
+    if (activeNoteId === "new") {
+      const res = await apiClient.post("/notes", { title, content });
       // Support both { data: { note } } and { note } response shapes
       const created = mergeSavedContent(
         res.data?.data?.note ?? res.data?.note ?? res.data,
-        { title, content }
+        { title, content },
       );
       setNotes((prev) => [created, ...prev]);
       setActiveNoteId(created._id);
@@ -109,7 +124,10 @@ export default function AppShell() {
       return;
     }
 
-    const res = await apiClient.put(`/notes/${activeNoteId}`, { title, content });
+    const res = await apiClient.put(`/notes/${activeNoteId}`, {
+      title,
+      content,
+    });
     // Support both { data: { note } } and { note } response shapes
     const updated = mergeSavedContent(
       res.data?.data?.note ?? res.data?.note ?? res.data,
@@ -117,7 +135,7 @@ export default function AppShell() {
         ...(activeNote || {}),
         title,
         content,
-      }
+      },
     );
     setNotes((prev) => prev.map((n) => (n._id === updated._id ? updated : n)));
     setActiveNote(updated);
@@ -131,14 +149,14 @@ export default function AppShell() {
         setActiveNoteId(null);
         setActiveNote(null);
       }
-      toast.success('Note deleted');
+      toast.success("Note deleted");
     } catch (err) {
-      toast.error(err.response?.data?.message || 'Could not delete note.');
+      toast.error(err.response?.data?.message || "Could not delete note.");
       throw err;
     }
   }
 
-  const isNewNote = activeNoteId === 'new';
+  const isNewNote = activeNoteId === "new";
   const showEditor = activeNoteId !== null;
   const isExistingNoteLoading = showEditor && !isNewNote && loadingNote;
 
@@ -156,7 +174,7 @@ export default function AppShell() {
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-600">
             <FileText className="h-4 w-4 text-white" />
           </div>
-          <span>{showEditor ? 'Back to Notes' : 'Notes App'}</span>
+          <span>{showEditor ? "Back to Notes" : "Notes App"}</span>
         </button>
 
         <div className="flex items-center gap-2">
@@ -170,7 +188,7 @@ export default function AppShell() {
           </button>
           <button
             type="button"
-            onClick={() => navigate('/profile')}
+            onClick={() => navigate("/profile")}
             className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 px-3 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800"
           >
             <User className="h-4 w-4" />
@@ -184,7 +202,9 @@ export default function AppShell() {
         <Sidebar onNewNote={handleNewNote} />
 
         {/* Notes list */}
-        <div className={`${showEditor ? 'hidden md:flex' : 'flex'} min-h-0 flex-shrink-0`}>
+        <div
+          className={`${showEditor ? "hidden md:flex" : "flex"} min-h-0 flex-shrink-0`}
+        >
           <NotesListPanel
             notes={notes}
             loading={loadingNotes}
@@ -199,7 +219,9 @@ export default function AppShell() {
         </div>
 
         {/* Editor or empty state */}
-        <main className={`${showEditor ? 'flex' : 'hidden md:flex'} min-h-0 flex-1 flex-col overflow-hidden`}>
+        <main
+          className={`${showEditor ? "flex" : "hidden md:flex"} min-h-0 flex-1 flex-col overflow-hidden`}
+        >
           {showEditor ? (
             isExistingNoteLoading ? (
               <div className="flex flex-1 items-center justify-center bg-white dark:bg-gray-900 transition-colors">

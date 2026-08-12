@@ -5,12 +5,23 @@ const ThemeContext = createContext(null);
 
 export function ThemeProvider({ children }) {
   const [theme, setTheme] = useState(() => {
-    // Restore from localStorage, fall back to system preference
-    const stored = localStorage.getItem("theme");
-    if (stored === "dark" || stored === "light") return stored;
-    return window.matchMedia("(prefers-color-scheme: dark)").matches
-      ? "dark"
-      : "light";
+    try {
+      if (typeof window === "undefined") return "light";
+
+      // Restore from localStorage, fall back to system preference
+      const stored = window.localStorage.getItem("theme");
+      if (stored === "dark" || stored === "light") return stored;
+
+      if (window.matchMedia) {
+        return window.matchMedia("(prefers-color-scheme: dark)").matches
+          ? "dark"
+          : "light";
+      }
+    } catch (error) {
+      // Fails gracefully if localStorage is restricted (e.g., incognito mode)
+    }
+
+    return "light"; // Ultimate safe fallback
   });
 
   // Keep the <html> class in sync whenever theme changes
@@ -21,7 +32,12 @@ export function ThemeProvider({ children }) {
     } else {
       root.classList.remove("dark");
     }
-    localStorage.setItem("theme", theme);
+
+    try {
+      window.localStorage.setItem("theme", theme);
+    } catch (error) {
+      // Silently ignore storage quota/security errors
+    }
   }, [theme]);
 
   function toggleTheme() {

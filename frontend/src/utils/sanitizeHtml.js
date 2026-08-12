@@ -7,26 +7,44 @@ export function sanitizeHtml(html) {
   try {
     return DOMPurify.sanitize(html, {
       ALLOWED_TAGS: [
-        'p', 'br', 'strong', 'em', 'u', 's',
-        'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
-        'ul', 'ol', 'li',
-        'a', 'blockquote', 'pre', 'code',
-        'span', 'div', 'img',
+        "p",
+        "br",
+        "strong",
+        "em",
+        "u",
+        "s",
+        "h1",
+        "h2",
+        "h3",
+        "h4",
+        "h5",
+        "h6",
+        "ul",
+        "ol",
+        "li",
+        "a",
+        "blockquote",
+        "pre",
+        "code",
+        "span",
+        "div",
+        "img",
       ],
       ALLOWED_ATTR: [
-        'href',
-        'target',
-        'rel',
-        'class',
-        'src',
-        'alt',
-        'title',
-        'style',
-        'data-align',
+        "href",
+        "target",
+        "rel",
+        "class",
+        "src",
+        "alt",
+        "title",
+        "data-align",
       ],
     });
-  } catch {
-    // Fallback: just strip all tags
-    return html.replace(/<[^>]+>/g, '');
+  } 
+  catch (e) {
+      return '';
   }
-}
+    
+  }
+
