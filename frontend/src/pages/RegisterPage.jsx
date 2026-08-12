@@ -14,6 +14,7 @@ export default function RegisterPage() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
+  // Already logged in — send straight to notes
   if (user) return <Navigate to="/notes" replace />;
 
   async function handleSubmit(e) {
@@ -28,8 +29,8 @@ export default function RegisterPage() {
     setLoading(true);
     try {
       await register(name.trim(), email.trim(), password);
-      toast.success('Account created successfully. Please sign in.');
-      navigate('/login');
+      toast.success('Account created successfully');
+      navigate('/notes');
     } catch (err) {
       const message = err.response?.data?.message || 'Registration failed. Please try again.';
       setError(message);

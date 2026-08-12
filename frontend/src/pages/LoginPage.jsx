@@ -8,13 +8,14 @@ export default function LoginPage() {
   const { login, user } = useAuth();
   const navigate = useNavigate();
 
+  
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-
+  
+  // Already logged in — send straight to notes
   if (user) return <Navigate to="/notes" replace />;
-
   async function handleSubmit(e) {
     e.preventDefault();
     setError('');
@@ -112,7 +113,7 @@ export default function LoginPage() {
 
         <p className="mt-5 text-center text-sm text-gray-500 dark:text-gray-400">
           Don't have an account?{' '}
-          <Link to="/signup" className="text-indigo-600 dark:text-indigo-400 font-medium hover:underline">
+          <Link to="/register" className="text-indigo-600 dark:text-indigo-400 font-medium hover:underline">
             Create one
           </Link>
         </p>
