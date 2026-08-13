@@ -32,23 +32,47 @@ export function AuthProvider({ children }) {
   }, []);
 
   async function login(email, password) {
-    const res = await apiClient.post('/auth/login', { email, password });
-    
-    const token = res.data?.data?.token ?? res.data?.token;
-    const loggedInUser = res.data?.data?.user ?? res.data?.user;
-    saveToken(token);
-    setUser(loggedInUser);
-    return loggedInUser;
+    try {
+      const res = await apiClient.post('/auth/login', { email, password });
+
+      const token = res.data?.data?.token ?? res.data?.token;
+      const loggedInUser = res.data?.data?.user ?? res.data?.user;
+
+      if (!token || !loggedInUser) {
+        throw new Error('Invalid response: missing token or user');
+      }
+
+      saveToken(token);
+      setUser(loggedInUser);
+      return loggedInUser;
+    } catch (error) {
+      throw new Error(
+        error.response?.data?.message || error.message || 'Login failed',
+        { cause: error },
+      );
+    }
   }
 
   async function register(name, email, password) {
-    const res = await apiClient.post('/auth/register', { name, email, password });
-    
-    const token = res.data?.data?.token ?? res.data?.token;
-    const newUser = res.data?.data?.user ?? res.data?.user;
-    saveToken(token);
-    setUser(newUser);
-    return newUser;
+    try {
+      const res = await apiClient.post('/auth/register', { name, email, password });
+
+      const token = res.data?.data?.token ?? res.data?.token;
+      const newUser = res.data?.data?.user ?? res.data?.user;
+
+      if (!token || !newUser) {
+        throw new Error('Invalid response: missing token or user');
+      }
+
+      saveToken(token);
+      setUser(newUser);
+      return newUser;
+    } catch (error) {
+      throw new Error(
+        error.response?.data?.message || error.message || 'Registration failed',
+        { cause: error },
+      );
+    }
   }
 
   async function updateUser({ name, password, imageFile }) {

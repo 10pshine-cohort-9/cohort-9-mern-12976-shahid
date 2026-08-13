@@ -125,25 +125,25 @@ export default function NotesListPanel({
                   aria-label={`Select note: ${note.title}`}
                 >
                   {/* Date */}
-                  <p className="text-xs text-gray-400 dark:text-gray-500 mb-1 uppercase tracking-wide">
+                  <span className="block text-xs text-gray-400 dark:text-gray-500 mb-1 uppercase tracking-wide">
                     {formatDate(note.updatedAt)}
-                  </p>
+                  </span>
 
                   {/* Title */}
-                  <h3
-                    className={`text-sm font-semibold mb-1 line-clamp-1 ${
+                  <span
+                    className={`block text-sm font-semibold mb-1 line-clamp-1 ${
                       isActive
                         ? "text-indigo-800 dark:text-indigo-300"
                         : "text-gray-900 dark:text-gray-100"
                     }`}
                   >
                     {note.title}
-                  </h3>
+                  </span>
 
                   {/* Preview */}
-                  <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-2 leading-relaxed">
+                  <span className="block text-xs text-gray-500 dark:text-gray-400 line-clamp-2 leading-relaxed">
                     {preview || "No content"}
-                  </p>
+                  </span>
                 </button>
 
                 {/* Three-dot menu (Sibling, not nested) */}

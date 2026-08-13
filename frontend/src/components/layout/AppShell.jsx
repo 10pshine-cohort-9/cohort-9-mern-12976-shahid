@@ -111,34 +111,39 @@ export default function AppShell() {
   }
 
   async function handleSaveNote({ title, content }) {
-    if (activeNoteId === "new") {
-      const res = await apiClient.post("/notes", { title, content });
-      // Support both { data: { note } } and { note } response shapes
-      const created = mergeSavedContent(
-        res.data?.data?.note ?? res.data?.note ?? res.data,
-        { title, content },
-      );
-      setNotes((prev) => [created, ...prev]);
-      setActiveNoteId(created._id);
-      setActiveNote(created);
-      return;
-    }
+    try {
+      if (activeNoteId === "new") {
+        const res = await apiClient.post("/notes", { title, content });
+        // Support both { data: { note } } and { note } response shapes
+        const created = mergeSavedContent(
+          res.data?.data?.note ?? res.data?.note ?? res.data,
+          { title, content },
+        );
+        setNotes((prev) => [created, ...prev]);
+        setActiveNoteId(created._id);
+        setActiveNote(created);
+        return;
+      }
 
-    const res = await apiClient.put(`/notes/${activeNoteId}`, {
-      title,
-      content,
-    });
-    // Support both { data: { note } } and { note } response shapes
-    const updated = mergeSavedContent(
-      res.data?.data?.note ?? res.data?.note ?? res.data,
-      {
-        ...(activeNote || {}),
+      const res = await apiClient.put(`/notes/${activeNoteId}`, {
         title,
         content,
-      },
-    );
-    setNotes((prev) => prev.map((n) => (n._id === updated._id ? updated : n)));
-    setActiveNote(updated);
+      });
+      // Support both { data: { note } } and { note } response shapes
+      const updated = mergeSavedContent(
+        res.data?.data?.note ?? res.data?.note ?? res.data,
+        {
+          ...(activeNote || {}),
+          title,
+          content,
+        },
+      );
+      setNotes((prev) => prev.map((n) => (n._id === updated._id ? updated : n)));
+      setActiveNote(updated);
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Could not save note.");
+      // keep editor state intact so the user can retry
+    }
   }
 
   async function handleDeleteNote(note) {
@@ -152,7 +157,7 @@ export default function AppShell() {
       toast.success("Note deleted");
     } catch (err) {
       toast.error(err.response?.data?.message || "Could not delete note.");
-      throw err;
+      // don't rethrow; callers should handle failure without unhandled rejections
     }
   }
 

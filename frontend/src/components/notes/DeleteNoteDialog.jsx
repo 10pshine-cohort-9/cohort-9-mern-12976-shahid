@@ -1,4 +1,5 @@
 import { useEffect, useRef } from "react";
+import PropTypes from "prop-types";
 import { Trash2 } from "lucide-react";
 import Button from "../common/Button";
 
@@ -11,27 +12,48 @@ export default function DeleteNoteDialog({
   const dialogRef = useRef(null);
   const previousFocusRef = useRef(null);
 
+  // Keep refs for handlers so the keydown listener doesn't need to re-register
+  const onCancelRef = useRef(onCancel);
+  const deletingRef = useRef(deleting);
+
+  useEffect(() => {
+    onCancelRef.current = onCancel;
+  }, [onCancel]);
+
+  useEffect(() => {
+    deletingRef.current = deleting;
+  }, [deleting]);
+
+  // Effect: focus management only
   useEffect(() => {
     if (!note) return;
 
-    // Save the currently focused element to restore it later
     previousFocusRef.current = document.activeElement;
 
-    // Move initial focus into the dialog (the first button: Cancel)
     if (dialogRef.current) {
       const firstFocusable = dialogRef.current.querySelector("button");
       if (firstFocusable) firstFocusable.focus();
     }
 
+    return () => {
+      if (previousFocusRef.current) {
+        previousFocusRef.current.focus();
+      }
+    };
+  }, [note]);
+
+  // Effect: keydown handling (trap focus + Escape) uses refs to avoid rebinds
+  useEffect(() => {
+    if (!note) return;
+
     const handleKeyDown = (e) => {
-      // Handle Escape key
       if (e.key === "Escape") {
         e.stopPropagation();
-        onCancel();
+        if (deletingRef.current) return; // prevent closing while deleting
+        onCancelRef.current?.();
         return;
       }
 
-      // Trap focus within the dialog
       if (e.key === "Tab" && dialogRef.current) {
         const focusableElements = dialogRef.current.querySelectorAll(
           'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
@@ -50,15 +72,8 @@ export default function DeleteNoteDialog({
     };
 
     document.addEventListener("keydown", handleKeyDown);
-
-    return () => {
-      document.removeEventListener("keydown", handleKeyDown);
-      // Restore focus when the dialog unmounts
-      if (previousFocusRef.current) {
-        previousFocusRef.current.focus();
-      }
-    };
-  }, [note, onCancel]);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [note]);
 
   if (!note) return null;
 
@@ -105,3 +120,10 @@ export default function DeleteNoteDialog({
     </div>
   );
 }
+
+  DeleteNoteDialog.propTypes = {
+    note: PropTypes.object,
+    onConfirm: PropTypes.func.isRequired,
+    onCancel: PropTypes.func.isRequired,
+    deleting: PropTypes.bool,
+  };

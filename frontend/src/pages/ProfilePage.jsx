@@ -65,6 +65,7 @@ export default function ProfilePage() {
       setPassword("");
       setImageFile(null);
       setPreviewUrl(null);
+      if (fileInputRef.current) fileInputRef.current.value = "";
       toast.success("Profile updated successfully");
     } catch (err) {
       toast.error(
@@ -77,8 +78,12 @@ export default function ProfilePage() {
   }
 
   async function handleLogout() {
-    await logout();
-    navigate("/login");
+    try {
+      await logout();
+      navigate("/login");
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Could not log out.");
+    }
   }
 
   const initials = user.name?.charAt(0).toUpperCase() || "?";

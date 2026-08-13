@@ -936,6 +936,25 @@ function handlePromptConfirm() {
     closePromptDialog();
     return;
   }
+
+  if (promptDialog.type === "html") {
+    if (!nextValue) {
+      toast.error("Please provide HTML to insert.");
+      return;
+    }
+
+    const sanitized = sanitizeHtml(nextValue);
+    if (!sanitized) {
+      toast.error("The provided HTML could not be sanitized.");
+      return;
+    }
+
+    restoreDialogSelection()?.insertContent(sanitized).run();
+    // Ensure any image alignments in the inserted HTML are applied to editor nodes
+    applyImageAlignmentsToEditor(editor, sanitized);
+    closePromptDialog();
+    return;
+  }
 }
 
 
