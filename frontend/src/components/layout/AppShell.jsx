@@ -138,7 +138,9 @@ export default function AppShell() {
           content,
         },
       );
-      setNotes((prev) => prev.map((n) => (n._id === updated._id ? updated : n)));
+      setNotes((prev) =>
+        prev.map((n) => (n._id === updated._id ? updated : n)),
+      );
       setActiveNote(updated);
     } catch (err) {
       toast.error(err.response?.data?.message || "Could not save note.");

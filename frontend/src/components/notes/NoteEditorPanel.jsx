@@ -878,130 +878,128 @@ export default function NoteEditorPanel({ note, onSave, onDiscard, onDelete }) {
     return editor.chain().focus().setTextSelection(promptDialog.selection);
   }
 
-function handlePromptConfirm() {
-  if (!editor || !promptDialog) return;
+  function handlePromptConfirm() {
+    if (!editor || !promptDialog) return;
 
-  const nextValue = promptDialog.value.trim();
+    const nextValue = promptDialog.value.trim();
 
-  if (promptDialog.type === "link") {
-    const command = restoreDialogSelection()?.extendMarkRange("link");
+    if (promptDialog.type === "link") {
+      const command = restoreDialogSelection()?.extendMarkRange("link");
 
-    if (!nextValue) {
-      command?.unsetLink().run();
+      if (!nextValue) {
+        command?.unsetLink().run();
+        closePromptDialog();
+        return;
+      }
+
+      command
+        ?.setLink({
+          href: nextValue,
+          target: "_blank",
+          rel: "noopener noreferrer",
+        })
+        .run();
       closePromptDialog();
       return;
     }
 
-    command
-      ?.setLink({
-        href: nextValue,
-        target: "_blank",
-        rel: "noopener noreferrer",
-      })
-      .run();
-    closePromptDialog();
-    return;
-  }
+    if (promptDialog.type === "image") {
+      let isValidImage = false;
 
-  if (promptDialog.type === "image") {
-    let isValidImage = false;
-
-    if (nextValue) {
-      try {
-        // window.location.origin allows valid relative paths to pass parsing
-        const url = new URL(nextValue, window.location.origin);
-        if (url.protocol === "http:" || url.protocol === "https:") {
-          isValidImage = true;
-        } else if (url.protocol === "data:") {
-          // Ensure data URIs are strictly images
-          isValidImage = url.pathname.startsWith("image/");
+      if (nextValue) {
+        try {
+          // window.location.origin allows valid relative paths to pass parsing
+          const url = new URL(nextValue, window.location.origin);
+          if (url.protocol === "http:" || url.protocol === "https:") {
+            isValidImage = true;
+          } else if (url.protocol === "data:") {
+            // Ensure data URIs are strictly images
+            isValidImage = url.pathname.startsWith("image/");
+          }
+        } catch (e) {
+          isValidImage = false; // Fails URL parsing
         }
-      } catch (e) {
-        isValidImage = false; // Fails URL parsing
       }
-    }
 
-    if (!nextValue || !isValidImage) {
-      toast.error("Please provide an image URL.");
+      if (!nextValue || !isValidImage) {
+        toast.error("Please provide an image URL.");
+        return;
+      }
+
+      restoreDialogSelection()
+        ?.setImage({
+          src: nextValue,
+          alt: "Inserted image",
+          align: DEFAULT_IMAGE_ALIGN, // Assumes DEFAULT_IMAGE_ALIGN is in scope
+        })
+        .run();
+      closePromptDialog();
       return;
     }
 
-    restoreDialogSelection()
-      ?.setImage({
-        src: nextValue,
-        alt: "Inserted image",
-        align: DEFAULT_IMAGE_ALIGN, // Assumes DEFAULT_IMAGE_ALIGN is in scope
-      })
-      .run();
-    closePromptDialog();
-    return;
+    if (promptDialog.type === "html") {
+      if (!nextValue) {
+        toast.error("Please provide HTML to insert.");
+        return;
+      }
+
+      const sanitized = sanitizeHtml(nextValue);
+      if (!sanitized) {
+        toast.error("The provided HTML could not be sanitized.");
+        return;
+      }
+
+      restoreDialogSelection()?.insertContent(sanitized).run();
+      // Ensure any image alignments in the inserted HTML are applied to editor nodes
+      applyImageAlignmentsToEditor(editor, sanitized);
+      closePromptDialog();
+      return;
+    }
   }
-
-  if (promptDialog.type === "html") {
-    if (!nextValue) {
-      toast.error("Please provide HTML to insert.");
-      return;
-    }
-
-    const sanitized = sanitizeHtml(nextValue);
-    if (!sanitized) {
-      toast.error("The provided HTML could not be sanitized.");
-      return;
-    }
-
-    restoreDialogSelection()?.insertContent(sanitized).run();
-    // Ensure any image alignments in the inserted HTML are applied to editor nodes
-    applyImageAlignmentsToEditor(editor, sanitized);
-    closePromptDialog();
-    return;
-  }
-}
-
 
   function openImagePicker() {
     imageInputRef.current?.click();
   }
 
-function handleImageSelected(event) {
+  function handleImageSelected(event) {
     const file = event.target.files?.[0];
     if (!file) return;
 
     // Validate MIME type
-    if (!file.type.startsWith('image/')) {
-      toast.error('Please select a valid image file.');
-      event.target.value = '';
+    if (!file.type.startsWith("image/")) {
+      toast.error("Please select a valid image file.");
+      event.target.value = "";
       return;
     }
 
     // Validate file size (e.g., 5MB limit for Data URIs)
     const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
     if (file.size > MAX_FILE_SIZE) {
-      toast.error('Image is too large. Please select a file under 5MB.');
-      event.target.value = '';
+      toast.error("Image is too large. Please select a file under 5MB.");
+      event.target.value = "";
       return;
     }
 
     const reader = new FileReader();
     reader.onload = () => {
-      if (typeof reader.result !== 'string') return;
+      if (typeof reader.result !== "string") return;
 
       editor
         ?.chain()
         .focus()
         .setImage({
           src: reader.result,
-          alt: file.name || 'Inserted image',
+          alt: file.name || "Inserted image",
           align: DEFAULT_IMAGE_ALIGN,
         })
         .run();
     };
     reader.onerror = () => {
-      toast.error('Could not read the selected image.');
+      toast.error("Could not read the selected image.");
     };
     reader.readAsDataURL(file);
-    event.target.value = '';
+    event.target.value = "";
   }
-
 
   function updateSelectedImageAttributes(attributes) {
     if (!editor || !selectedImage) return;
@@ -1058,7 +1056,7 @@ function handleImageSelected(event) {
     }
   }
 
-async function handleDelete() {
+  async function handleDelete() {
     if (!note || !onDelete) return;
 
     setDeleting(true);

@@ -121,9 +121,9 @@ export default function DeleteNoteDialog({
   );
 }
 
-  DeleteNoteDialog.propTypes = {
-    note: PropTypes.object,
-    onConfirm: PropTypes.func.isRequired,
-    onCancel: PropTypes.func.isRequired,
-    deleting: PropTypes.bool,
-  };
+DeleteNoteDialog.propTypes = {
+  note: PropTypes.object,
+  onConfirm: PropTypes.func.isRequired,
+  onCancel: PropTypes.func.isRequired,
+  deleting: PropTypes.bool,
+};

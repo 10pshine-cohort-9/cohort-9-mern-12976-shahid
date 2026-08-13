@@ -33,13 +33,13 @@ export function AuthProvider({ children }) {
 
   async function login(email, password) {
     try {
-      const res = await apiClient.post('/auth/login', { email, password });
+      const res = await apiClient.post("/auth/login", { email, password });
 
       const token = res.data?.data?.token ?? res.data?.token;
       const loggedInUser = res.data?.data?.user ?? res.data?.user;
 
       if (!token || !loggedInUser) {
-        throw new Error('Invalid response: missing token or user');
+        throw new Error("Invalid response: missing token or user");
       }
 
       saveToken(token);
@@ -47,7 +47,7 @@ export function AuthProvider({ children }) {
       return loggedInUser;
     } catch (error) {
       throw new Error(
-        error.response?.data?.message || error.message || 'Login failed',
+        error.response?.data?.message || error.message || "Login failed",
         { cause: error },
       );
     }
@@ -55,13 +55,17 @@ export function AuthProvider({ children }) {
 
   async function register(name, email, password) {
     try {
-      const res = await apiClient.post('/auth/register', { name, email, password });
+      const res = await apiClient.post("/auth/register", {
+        name,
+        email,
+        password,
+      });
 
       const token = res.data?.data?.token ?? res.data?.token;
       const newUser = res.data?.data?.user ?? res.data?.user;
 
       if (!token || !newUser) {
-        throw new Error('Invalid response: missing token or user');
+        throw new Error("Invalid response: missing token or user");
       }
 
       saveToken(token);
@@ -69,7 +73,7 @@ export function AuthProvider({ children }) {
       return newUser;
     } catch (error) {
       throw new Error(
-        error.response?.data?.message || error.message || 'Registration failed',
+        error.response?.data?.message || error.message || "Registration failed",
         { cause: error },
       );
     }

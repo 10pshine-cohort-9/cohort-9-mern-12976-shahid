@@ -1,14 +1,17 @@
-import { useState } from 'react';
-import { Search, Plus, MoreVertical, Trash2 } from 'lucide-react';
-import { formatDate } from '../../utils/formatDate';
-import { sanitizeHtml } from '../../utils/sanitizeHtml';
-import DeleteNoteDialog from './DeleteNoteDialog';
-import Loader from '../common/Loader';
+import { useState } from "react";
+import { Search, Plus, MoreVertical, Trash2 } from "lucide-react";
+import { formatDate } from "../../utils/formatDate";
+import { sanitizeHtml } from "../../utils/sanitizeHtml";
+import DeleteNoteDialog from "./DeleteNoteDialog";
+import Loader from "../common/Loader";
 
 // Strip HTML and truncate to a short preview string
 function getPreview(html) {
-  const clean = sanitizeHtml(html).replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
-  return clean.length > 110 ? clean.slice(0, 110) + '…' : clean;
+  const clean = sanitizeHtml(html)
+    .replace(/<[^>]+>/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+  return clean.length > 110 ? clean.slice(0, 110) + "…" : clean;
 }
 
 export default function NotesListPanel({
@@ -89,7 +92,9 @@ export default function NotesListPanel({
         )}
 
         {!loading && error && (
-          <p className="px-4 py-6 text-sm text-red-500 dark:text-red-400">{error}</p>
+          <p className="px-4 py-6 text-sm text-red-500 dark:text-red-400">
+            {error}
+          </p>
         )}
 
         {!loading && !error && notes.length === 0 && (
@@ -97,7 +102,7 @@ export default function NotesListPanel({
             <p className="text-sm text-gray-400 dark:text-gray-500">
               {searchQuery
                 ? `No notes matching "${searchQuery}"`
-                : 'No notes yet. Create your first one!'}
+                : "No notes yet. Create your first one!"}
             </p>
           </div>
         )}
