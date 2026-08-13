@@ -1,7 +1,7 @@
 /* eslint-disable react-refresh/only-export-components */
-import { createContext, useContext, useState, useEffect } from 'react';
-import apiClient from '../api/apiClient';
-import { getToken, saveToken, removeToken } from '../utils/authStorage';
+import { createContext, useContext, useState, useEffect } from "react";
+import apiClient from "../api/apiClient";
+import { getToken, saveToken, removeToken } from "../utils/authStorage";
 
 export const AuthContext = createContext(null);
 
@@ -17,7 +17,7 @@ export function AuthProvider({ children }) {
         return;
       }
       try {
-        const res = await apiClient.get('/auth/profile');
+        const res = await apiClient.get("/auth/profile");
         // Support both { data: { user } } and { user } response shapes
         const user = res.data?.data?.user ?? res.data?.user ?? res.data;
         setUser(user);
@@ -52,31 +52,44 @@ export function AuthProvider({ children }) {
   }
 
   async function updateUser({ name, password, imageFile }) {
-    const payload = imageFile ? new FormData() : { name, password };
+    try {
+      const payload = imageFile ? new FormData() : { name, password };
 
-    if (imageFile) {
-      payload.append('name', name);
-      if (password) {
-        payload.append('password', password);
-      }
-      payload.append('image', imageFile);
-    }
-
-    const res = await apiClient.put('/auth/profile', payload, imageFile
-      ? {
-          headers: {
-            'Content-Type': 'multipart/form-data',
-          },
+      if (imageFile) {
+        payload.append("name", name);
+        if (password) {
+          payload.append("password", password);
         }
-      : undefined);
-    const updatedUser = res.data?.data?.user ?? res.data?.user ?? res.data;
-    setUser(updatedUser);
-    return updatedUser;
+        payload.append("image", imageFile);
+      }
+
+      const res = await apiClient.put(
+        "/auth/profile",
+        payload,
+        imageFile
+          ? {
+              headers: {
+                "Content-Type": "multipart/form-data",
+              },
+            }
+          : undefined,
+      );
+      const updatedUser = res.data?.data?.user ?? res.data?.user ?? res.data;
+      setUser(updatedUser);
+      return updatedUser;
+    } catch (error) {
+      throw new Error(
+        error.response?.data?.message ||
+          error.message ||
+          "Profile update failed",
+        { cause: error },
+      );
+    }
   }
 
   async function logout() {
     try {
-      await apiClient.post('/auth/logout');
+      await apiClient.post("/auth/logout");
     } catch {
       // Even if the request fails, still clear local auth state
     }
@@ -85,7 +98,9 @@ export function AuthProvider({ children }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, register, updateUser, logout }}>
+    <AuthContext.Provider
+      value={{ user, loading, login, register, updateUser, logout }}
+    >
       {children}
     </AuthContext.Provider>
   );
