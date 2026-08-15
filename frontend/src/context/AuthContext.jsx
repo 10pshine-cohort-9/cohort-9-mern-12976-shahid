@@ -34,12 +34,12 @@ export function AuthProvider({ children }) {
   async function login(email, password) {
     try {
       const res = await apiClient.post("/auth/login", { email, password });
-      // Support both { data: { token, user } } and { token, user } response shapes
+
       const token = res.data?.data?.token ?? res.data?.token;
       const loggedInUser = res.data?.data?.user ?? res.data?.user;
 
       if (!token || !loggedInUser) {
-        throw new Error("Invalid response: Missing token or user data.");
+        throw new Error("Invalid response: missing token or user");
       }
 
       saveToken(token);
@@ -60,12 +60,12 @@ export function AuthProvider({ children }) {
         email,
         password,
       });
-      // Support both { data: { token, user } } and { token, user } response shapes
+
       const token = res.data?.data?.token ?? res.data?.token;
       const newUser = res.data?.data?.user ?? res.data?.user;
 
       if (!token || !newUser) {
-        throw new Error("Invalid response: Missing token or user data.");
+        throw new Error("Invalid response: missing token or user");
       }
 
       saveToken(token);

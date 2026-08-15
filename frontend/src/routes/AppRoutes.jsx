@@ -1,7 +1,7 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
 import LoginPage from '../pages/LoginPage.jsx';
-import NotesPage from '../pages/NotesPage.jsx';
 import RegisterPage from '../pages/RegisterPage.jsx';
+import AppShell from '../components/layout/AppShell';
 import ProfilePage from '../pages/ProfilePage.jsx';
 import NotFoundPage from '../pages/NotFoundPage.jsx';
 import GuestRoute from './GuestRoute.jsx';
@@ -21,7 +21,7 @@ export default function AppRoutes() {
 
       {/* Protected routes */}
       <Route element={<ProtectedRoute />}>
-        <Route path="/notes" element={<NotesPage />} />
+        <Route path="/notes/*" element={<AppShell />} />
         <Route path="/profile" element={<ProfilePage />} />
       </Route>
 
