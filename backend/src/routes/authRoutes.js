@@ -5,6 +5,7 @@ import {
   loginUser,
   logoutUser,
   getProfile,
+  updateProfile,
 } from "../controllers/authController.js";
 
 import {authLimiter} from "../middleware/rateLimiter.js";
@@ -22,5 +23,6 @@ router.get("/profile", protect, (req, res, next) => {
   res.setHeader("Cache-Control", "no-store");
   next();
 }, getProfile);
+router.put("/profile", protect, updateProfile);
 
 export default router;

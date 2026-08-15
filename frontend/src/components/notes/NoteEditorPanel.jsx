@@ -8,6 +8,7 @@ import Image from "@tiptap/extension-image";
 import toast from "react-hot-toast";
 import {
   AlignCenter,
+  AlignJustify,
   AlignLeft,
   AlignRight,
   Bold,
@@ -26,6 +27,7 @@ import {
   X,
 } from "lucide-react";
 import DeleteNoteDialog from "./DeleteNoteDialog";
+import { uploadNoteImageFile } from "../../api/uploadApi";
 import { sanitizeHtml } from "../../utils/sanitizeHtml";
 import PropTypes from "prop-types";
 
@@ -57,6 +59,14 @@ function Divider() {
 const EMPTY_EDITOR_HTML = "<p></p>";
 const DEFAULT_IMAGE_ALIGN = "center";
 const DEFAULT_TEXT_ALIGN = "left";
+const MAX_IMAGE_FILE_SIZE = 5 * 1024 * 1024;
+const ALLOWED_IMAGE_MIME_TYPES = new Set([
+  "image/jpeg",
+  "image/jpg",
+  "image/png",
+  "image/webp",
+]);
+const TEXT_ALIGNMENTS = ["left", "center", "right", "justify"];
 const TEXT_ALIGNABLE_TYPES = [
   "paragraph",
   "heading",
@@ -65,8 +75,8 @@ const TEXT_ALIGNABLE_TYPES = [
   "orderedList",
 ];
 const EDITOR_BODY_CLASS =
-  "prose prose-sm dark:prose-invert max-w-none min-h-[300px] p-4 focus:outline-none text-gray-800 dark:text-gray-100";
-const READONLY_RENDER_CLASS = `tiptap ProseMirror ${EDITOR_BODY_CLASS}`;
+  "tiptap-content min-h-[300px] text-gray-800 focus:outline-none dark:text-gray-100";
+const READONLY_RENDER_CLASS = `tiptap-content tiptap-readonly`;
 
 function normalizeImageAlign(value) {
   return ["left", "center", "right"].includes(value)
@@ -75,9 +85,7 @@ function normalizeImageAlign(value) {
 }
 
 function normalizeTextAlign(value) {
-  return ["left", "center", "right"].includes(value)
-    ? value
-    : DEFAULT_TEXT_ALIGN;
+  return TEXT_ALIGNMENTS.includes(value) ? value : DEFAULT_TEXT_ALIGN;
 }
 
 function getImageAlignmentStyle(value) {
@@ -185,15 +193,7 @@ function normalizeHtmlForViewer(html) {
 
   doc.querySelectorAll("img").forEach((image) => {
     const align = normalizeImageAlign(image.getAttribute("data-align"));
-    const mergedStyle = [
-      image.getAttribute("style")?.trim().replace(/;$/, ""),
-      getImageAlignmentStyle(align),
-    ]
-      .filter(Boolean)
-      .join("; ");
-
     image.setAttribute("data-align", align);
-    image.setAttribute("style", mergedStyle);
   });
 
   return sanitizeHtml(doc.body.innerHTML || "");
@@ -480,7 +480,7 @@ function Toolbar({
   if (!editor) return null;
 
   function setTextAlign(alignment) {
-    if (selectedImage) {
+    if (selectedImage && alignment !== "justify") {
       onAlignImage(alignment);
       return;
     }
@@ -610,6 +610,13 @@ function Toolbar({
       >
         <AlignRight className="w-3.5 h-3.5" />
       </ToolbarBtn>
+      <ToolbarBtn
+        onClick={() => setTextAlign("justify")}
+        active={!selectedImage && editor.isActive({ textAlign: "justify" })}
+        title="Justify"
+      >
+        <AlignJustify className="w-3.5 h-3.5" />
+      </ToolbarBtn>
 
       <Divider />
 
@@ -678,6 +685,79 @@ export default function NoteEditorPanel({ note, onSave, onDiscard, onDelete }) {
   const [selectedImage, setSelectedImage] = useState(null);
   const imageInputRef = useRef(null);
 
+  function validateImageFile(file) {
+    if (!file) {
+      return "Please choose an image to upload.";
+    }
+
+    if (!ALLOWED_IMAGE_MIME_TYPES.has(file.type)) {
+      return "Please choose a JPG, PNG, or WEBP image.";
+    }
+
+    if (file.size > MAX_IMAGE_FILE_SIZE) {
+      return "Images must be 5MB or smaller.";
+    }
+
+    return null;
+  }
+
+  async function uploadAndInsertImage({ file, view }) {
+    const validationError = validateImageFile(file);
+
+    if (validationError) {
+      toast.error(validationError);
+      return;
+    }
+
+    const toastId = toast.loading("Uploading image...");
+
+    try {
+      const uploaded = await uploadNoteImageFile(file);
+      const uploadedUrl = uploaded?.url;
+
+      if (!uploadedUrl) {
+        throw new Error("No image URL was returned by the server.");
+      }
+
+      if (view) {
+        const imageNode = view.state.schema.nodes.image;
+
+        if (!imageNode) {
+          throw new Error("The editor could not create an image node.");
+        }
+
+        const transaction = view.state.tr.replaceSelectionWith(
+          imageNode.create({
+            src: uploadedUrl,
+            alt: file.name || "Uploaded image",
+            align: DEFAULT_IMAGE_ALIGN,
+          }),
+        );
+
+        view.dispatch(transaction.scrollIntoView());
+      } else {
+        editor
+          ?.chain()
+          .focus()
+          .setImage({
+            src: uploadedUrl,
+            alt: file.name || "Uploaded image",
+            align: DEFAULT_IMAGE_ALIGN,
+          })
+          .run();
+      }
+
+      toast.success("Image uploaded successfully.", { id: toastId });
+    } catch (error) {
+      toast.error(
+        error.response?.data?.message ||
+          error.message ||
+          "Could not upload the image.",
+        { id: toastId },
+      );
+    }
+  }
+
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
@@ -701,8 +781,41 @@ export default function NoteEditorPanel({ note, onSave, onDiscard, onDelete }) {
     content: "",
     editorProps: {
       attributes: {
-        class:
-          "prose prose-sm dark:prose-invert max-w-none min-h-[300px] p-4 focus:outline-none text-gray-800 dark:text-gray-100",
+        class: EDITOR_BODY_CLASS,
+      },
+      handlePaste(view, event) {
+        const clipboardItems = Array.from(event.clipboardData?.items || []);
+        const imageItem = clipboardItems.find((item) =>
+          item.type.startsWith("image/"),
+        );
+
+        if (!imageItem) {
+          return false;
+        }
+
+        const file = imageItem.getAsFile();
+
+        if (!file) {
+          return false;
+        }
+
+        event.preventDefault();
+        void uploadAndInsertImage({ file, view });
+        return true;
+      },
+      handleDrop(view, event) {
+        const droppedFiles = Array.from(event.dataTransfer?.files || []);
+        const imageFile = droppedFiles.find((file) =>
+          file.type.startsWith("image/"),
+        );
+
+        if (!imageFile) {
+          return false;
+        }
+
+        event.preventDefault();
+        void uploadAndInsertImage({ file: imageFile, view });
+        return true;
       },
     },
     editable: false,
@@ -916,7 +1029,7 @@ export default function NoteEditorPanel({ note, onSave, onDiscard, onDelete }) {
             // Ensure data URIs are strictly images
             isValidImage = url.pathname.startsWith("image/");
           }
-        } catch (e) {
+        } catch {
           isValidImage = false; // Fails URL parsing
         }
       }
@@ -961,43 +1074,10 @@ export default function NoteEditorPanel({ note, onSave, onDiscard, onDelete }) {
     imageInputRef.current?.click();
   }
 
-  function handleImageSelected(event) {
+  async function handleImageSelected(event) {
     const file = event.target.files?.[0];
-    if (!file) return;
+    await uploadAndInsertImage({ file });
 
-    // Validate MIME type
-    if (!file.type.startsWith("image/")) {
-      toast.error("Please select a valid image file.");
-      event.target.value = "";
-      return;
-    }
-
-    // Validate file size (e.g., 5MB limit for Data URIs)
-    const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
-    if (file.size > MAX_FILE_SIZE) {
-      toast.error("Image is too large. Please select a file under 5MB.");
-      event.target.value = "";
-      return;
-    }
-
-    const reader = new FileReader();
-    reader.onload = () => {
-      if (typeof reader.result !== "string") return;
-
-      editor
-        ?.chain()
-        .focus()
-        .setImage({
-          src: reader.result,
-          alt: file.name || "Inserted image",
-          align: DEFAULT_IMAGE_ALIGN,
-        })
-        .run();
-    };
-    reader.onerror = () => {
-      toast.error("Could not read the selected image.");
-    };
-    reader.readAsDataURL(file);
     event.target.value = "";
   }
 
@@ -1063,7 +1143,8 @@ export default function NoteEditorPanel({ note, onSave, onDiscard, onDelete }) {
     try {
       await onDelete(note);
       setShowDeleteDialog(false);
-    } catch (error) {
+    } catch {
+      // Delete errors are surfaced by the parent handler.
     } finally {
       setDeleting(false);
     }
@@ -1187,7 +1268,7 @@ export default function NoteEditorPanel({ note, onSave, onDiscard, onDelete }) {
           <input
             ref={imageInputRef}
             type="file"
-            accept="image/*"
+            accept="image/jpeg,image/png,image/webp"
             className="hidden"
             onChange={handleImageSelected}
           />

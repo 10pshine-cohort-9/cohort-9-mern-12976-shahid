@@ -39,12 +39,10 @@ export function sanitizeHtml(html) {
         "alt",
         "title",
         "data-align",
+        "data-text-align",
       ],
     });
-  } 
-  catch (e) {
-      return '';
+  } catch {
+    return '';
   }
-    
-  }
-
+}

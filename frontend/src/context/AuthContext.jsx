@@ -1,6 +1,7 @@
 /* eslint-disable react-refresh/only-export-components */
 import { createContext, useContext, useState, useEffect } from "react";
 import apiClient from "../api/apiClient";
+import { uploadProfileImageFile } from "../api/uploadApi";
 import { getToken, saveToken, removeToken } from "../utils/authStorage";
 
 export const AuthContext = createContext(null);
@@ -81,28 +82,24 @@ export function AuthProvider({ children }) {
 
   async function updateUser({ name, password, imageFile }) {
     try {
-      const payload = imageFile ? new FormData() : { name, password };
+      let updatedUser = user;
+      const trimmedName = name?.trim();
+      const trimmedPassword = password?.trim();
 
-      if (imageFile) {
-        payload.append("name", name);
-        if (password) {
-          payload.append("password", password);
-        }
-        payload.append("image", imageFile);
+      if (trimmedName || trimmedPassword) {
+        const res = await apiClient.put("/auth/profile", {
+          name: trimmedName,
+          password: trimmedPassword || undefined,
+        });
+
+        updatedUser = res.data?.data?.user ?? res.data?.user ?? res.data;
       }
 
-      const res = await apiClient.put(
-        "/auth/profile",
-        payload,
-        imageFile
-          ? {
-              headers: {
-                "Content-Type": "multipart/form-data",
-              },
-            }
-          : undefined,
-      );
-      const updatedUser = res.data?.data?.user ?? res.data?.user ?? res.data;
+      if (imageFile) {
+        const uploaded = await uploadProfileImageFile(imageFile);
+        updatedUser = uploaded?.user ?? uploaded;
+      }
+
       setUser(updatedUser);
       return updatedUser;
     } catch (error) {

@@ -15,6 +15,14 @@ import { useAuth } from "../context/AuthContext";
 import { formatDate } from "../utils/formatDate";
 import { getUserImage } from "../utils/userImage";
 
+const MAX_IMAGE_FILE_SIZE = 5 * 1024 * 1024;
+const ALLOWED_IMAGE_MIME_TYPES = new Set([
+  "image/jpeg",
+  "image/jpg",
+  "image/png",
+  "image/webp",
+]);
+
 export default function ProfilePage() {
   const { user, updateUser, logout } = useAuth();
   const navigate = useNavigate();
@@ -42,6 +50,19 @@ export default function ProfilePage() {
   function handleImageChange(e) {
     const file = e.target.files?.[0];
     if (!file) return;
+
+    if (!ALLOWED_IMAGE_MIME_TYPES.has(file.type)) {
+      toast.error("Please choose a JPG, PNG, or WEBP image.");
+      e.target.value = "";
+      return;
+    }
+
+    if (file.size > MAX_IMAGE_FILE_SIZE) {
+      toast.error("Profile images must be 5MB or smaller.");
+      e.target.value = "";
+      return;
+    }
+
     if (previewUrl) URL.revokeObjectURL(previewUrl);
     setImageFile(file);
     setPreviewUrl(URL.createObjectURL(file));
@@ -129,7 +150,7 @@ export default function ProfilePage() {
             <input
               ref={fileInputRef}
               type="file"
-              accept="image/*"
+              accept="image/jpeg,image/png,image/webp"
               className="hidden"
               onChange={handleImageChange}
             />
