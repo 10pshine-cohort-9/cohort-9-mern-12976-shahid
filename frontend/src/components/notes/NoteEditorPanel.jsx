@@ -711,6 +711,15 @@ export default function NoteEditorPanel({ note, onSave, onDiscard, onDelete }) {
 
     const toastId = toast.loading("Uploading image...");
 
+    // Capture the selection bookmark BEFORE the async upload
+    // to preserve the insertion location even if the user types or clicks elsewhere.
+    let bookmark = null;
+    if (view) {
+      bookmark = view.state.selection.getBookmark();
+    } else if (editor?.view) {
+      bookmark = editor.view.state.selection.getBookmark();
+    }
+
     try {
       const uploaded = await uploadNoteImageFile(file);
       const uploadedUrl = uploaded?.url;
@@ -726,7 +735,15 @@ export default function NoteEditorPanel({ note, onSave, onDiscard, onDelete }) {
           throw new Error("The editor could not create an image node.");
         }
 
-        const transaction = view.state.tr.replaceSelectionWith(
+        let transaction = view.state.tr;
+
+        // Restore the selection using the resolved bookmark
+        if (bookmark) {
+          const resolvedSelection = bookmark.resolve(view.state.doc);
+          transaction = transaction.setSelection(resolvedSelection);
+        }
+
+        transaction = transaction.replaceSelectionWith(
           imageNode.create({
             src: uploadedUrl,
             alt: file.name || "Uploaded image",
@@ -736,10 +753,15 @@ export default function NoteEditorPanel({ note, onSave, onDiscard, onDelete }) {
 
         view.dispatch(transaction.scrollIntoView());
       } else {
-        editor
-          ?.chain()
-          .focus()
-          .setImage({
+        const chain = editor?.chain().focus();
+
+        if (bookmark && editor?.view) {
+          const resolvedSelection = bookmark.resolve(editor.view.state.doc);
+          chain.setTextSelection(resolvedSelection);
+        }
+
+        chain
+          ?.setImage({
             src: uploadedUrl,
             alt: file.name || "Uploaded image",
             align: DEFAULT_IMAGE_ALIGN,
@@ -757,7 +779,6 @@ export default function NoteEditorPanel({ note, onSave, onDiscard, onDelete }) {
       );
     }
   }
-
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
@@ -1074,12 +1095,21 @@ export default function NoteEditorPanel({ note, onSave, onDiscard, onDelete }) {
     imageInputRef.current?.click();
   }
 
-  async function handleImageSelected(event) {
-    const file = event.target.files?.[0];
-    await uploadAndInsertImage({ file });
+async function handleImageSelected(event) {
+  // Capture the input element before the async operation
+  const input = event.target;
+  const file = input.files?.[0];
 
-    event.target.value = "";
+  try {
+    await uploadAndInsertImage({ file });
+  } catch (error) {
+    // Prevent unhandled promise rejections if the helper throws before its internal try/catch
+    console.error("Unexpected error during image upload:", error);
+  } finally {
+    // Ensure the input is always cleared, allowing the user to select the same file again if it failed
+    input.value = "";
   }
+}
 
   function updateSelectedImageAttributes(attributes) {
     if (!editor || !selectedImage) return;

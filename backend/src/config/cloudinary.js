@@ -40,13 +40,21 @@ cloudinary.config({
 
 function getSafePublicId(originalName = "image") {
   const baseName = originalName.replace(/\.[^/.]+$/, "");
+  
+  const randomPart = crypto.randomBytes(4).toString('hex');
 
-  return `${Date.now()}-${baseName}`
+  return `${Date.now()}-${randomPart}-${baseName}`
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "")
     .slice(0, 80);
 }
+
+
+const uploadOptions = {
+  overwrite: false, 
+  public_id: getSafePublicId(originalName) 
+};
 
 function imageFileFilter(req, file, cb) {
   if (!ALLOWED_IMAGE_MIME_TYPES.has(file.mimetype)) {
@@ -84,6 +92,9 @@ function createImageUpload({ folder, transformation }) {
     fileFilter: imageFileFilter,
     limits: {
       fileSize: MAX_IMAGE_FILE_SIZE,
+      files: 1,
+      fields: 0,
+      parts: 1,
     },
   });
 }

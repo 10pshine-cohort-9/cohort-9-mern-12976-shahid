@@ -153,9 +153,9 @@ const updateProfile = async (req, res, next) => {
       user.name = name.trim();
     }
 
-    if (typeof password === "string" && password.trim()) {
-      user.password = password.trim();
-    }
+  if (typeof password === "string" && password.trim()) {
+    user.password = password;
+  }
 
     await user.save();
 
