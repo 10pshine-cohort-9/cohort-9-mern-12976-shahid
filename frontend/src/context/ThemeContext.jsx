@@ -16,12 +16,13 @@ export function ThemeProvider({ children }) {
         return window.matchMedia("(prefers-color-scheme: dark)").matches
           ? "dark"
           : "light";
+        
       }
-    } catch (error) {
-      // Fails gracefully if localStorage is restricted (e.g., incognito mode)
+    } catch {
+      // Fall back to the default theme when storage/media access is unavailable.
     }
 
-    return "light"; // Ultimate safe fallback
+    return "light"; 
   });
 
   // Keep the <html> class in sync whenever theme changes
@@ -35,7 +36,7 @@ export function ThemeProvider({ children }) {
 
     try {
       window.localStorage.setItem("theme", theme);
-    } catch (error) {
+    } catch {
       // Silently ignore storage quota/security errors
     }
   }, [theme]);

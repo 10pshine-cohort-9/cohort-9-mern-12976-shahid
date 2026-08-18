@@ -23,6 +23,18 @@ const userSchema = new mongoose.Schema(
       minlength: 6,
       select: false,
     },
+
+    avatarUrl: {
+      type: String,
+      default: "",
+      trim: true,
+    },
+
+    avatarPublicId: {
+      type: String,
+      default: "",
+      trim: true,
+    },
   },
 
   {

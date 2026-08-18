@@ -1,8 +1,7 @@
+import "dotenv/config";
 import app from "./app.js";
 import connectDB from "./config/db.js";
 import logger from "./config/logger.js";
-import dotenv from "dotenv";
-dotenv.config();
 
 await connectDB();
 

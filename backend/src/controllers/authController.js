@@ -1,6 +1,7 @@
 import User from "../models/User.js";
 import generateToken from "../utils/generateToken.js";
 import logger from "../config/logger.js";
+import { serializeUser } from "../utils/serializeUser.js";
 
 const registerUser = async (req, res, next) => {
   try {
@@ -40,11 +41,7 @@ const registerUser = async (req, res, next) => {
       success: true,
       message: "User registered successfully.",
       token: generateToken(user._id),
-      user: {
-        id: user._id,
-        name: user.name,
-        email: user.email,
-      },
+      user: serializeUser(user),
     });
   } catch (error) {
     logger.error({
@@ -103,12 +100,7 @@ const loginUser = async (req, res, next) => {
       message: "Login successful.",
 
       token: generateToken(user._id),
-
-      user: {
-        id: user._id,
-        name: user.name,
-        email: user.email,
-      },
+      user: serializeUser(user),
     });
   } catch (error) {
     logger.error({
@@ -142,14 +134,50 @@ const getProfile = async (req, res) => {
 
   res.status(200).json({
     success: true,
-
-    user: {
-      id: req.user._id,
-      name: req.user.name,
-      email: req.user.email,
-      createdAt: req.user.createdAt,
-    },
+    user: serializeUser(req.user),
   });
 };
 
-export { registerUser, loginUser, logoutUser, getProfile };
+const updateProfile = async (req, res, next) => {
+  try {
+    const user = await User.findById(req.user._id).select("+password");
+
+    if (!user) {
+      res.status(404);
+      throw new Error("User not found.");
+    }
+
+    const { name, password } = req.body;
+
+    if (typeof name === "string" && name.trim()) {
+      user.name = name.trim();
+    }
+
+  if (typeof password === "string" && password.trim()) {
+    user.password = password;
+  }
+
+    await user.save();
+
+    logger.info({
+      event: "UPDATE_PROFILE_SUCCESS",
+      userId: user._id,
+    });
+
+    res.status(200).json({
+      success: true,
+      message: "Profile updated successfully.",
+      user: serializeUser(user),
+    });
+  } catch (error) {
+    logger.error({
+      event: "UPDATE_PROFILE_ERROR",
+      message: error.message,
+      stack: error.stack,
+    });
+
+    next(error);
+  }
+};
+
+export { registerUser, loginUser, logoutUser, getProfile, updateProfile };
