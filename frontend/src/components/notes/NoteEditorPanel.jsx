@@ -689,6 +689,7 @@ export default function NoteEditorPanel({ note, onSave, onDiscard, onDelete }) {
   const [selectedImage, setSelectedImage] = useState(null);
   const imageInputRef = useRef(null);
   const pendingImageFilesRef = useRef(new Map());
+  const uploadedPendingPreviewsRef = useRef(new Set());
 
   function cleanupObjectUrl(objectUrl) {
     if (!isBlobUrl(objectUrl)) {
@@ -800,31 +801,59 @@ export default function NoteEditorPanel({ note, onSave, onDiscard, onDelete }) {
           throw new Error("No image URL was returned by the server.");
         }
 
+        // Immediately record and apply this single-image replacement so
+        // successfully uploaded images are reflected even if a later upload fails.
         uploadedUrlByPreview.set(previewUrl, uploadedUrl);
+
+        // Replace occurrences of this preview URL in the parsed document
+        // so the returned HTML reflects the successful upload.
+        imageElements.forEach((imageElement) => {
+          const currentSrc = imageElement.getAttribute("src");
+          if (currentSrc === previewUrl) {
+            imageElement.setAttribute("src", uploadedUrl);
+          }
+        });
+
+        // Remove the pending entry so the file is no longer considered pending.
+        // Do NOT revoke the object URL here: we must preserve the blob URL
+        // until the DOM has been updated to use the uploaded URL.
+        pendingImageFilesRef.current.delete(previewUrl);
+        uploadedPendingPreviewsRef.current.add(previewUrl);
       }
 
-      imageElements.forEach((imageElement) => {
-        const currentSrc = imageElement.getAttribute("src");
-        const uploadedUrl = uploadedUrlByPreview.get(currentSrc);
-
-        if (uploadedUrl) {
-          imageElement.setAttribute("src", uploadedUrl);
-        }
-      });
-
-      uploadedUrlByPreview.forEach((uploadedUrl, previewUrl) => {
-        clearPendingImage(previewUrl);
-      });
-
+      // Success notification for the whole batch
       toast.success("Images uploaded successfully.", { id: toastId });
       return doc.body.innerHTML || html;
     } catch (error) {
-      toast.error(
-        error.response?.data?.message ||
-          error.message ||
-          "Could not upload the pending images.",
-        { id: toastId },
-      );
+      // Clear the loading toast but do not show an error here — the caller
+      // (handleSave) will show a single user-facing error message.
+      try {
+        toast.dismiss(toastId);
+      } catch {}
+      // Apply any successful replacements to the editor so partial progress
+      // is preserved before rethrowing the error to the caller.
+      const partialHtml = doc.body.innerHTML || html;
+
+      if (editor && !isHtmlMode) {
+        setEditorContentWithImageAlignments(editor, partialHtml);
+
+        // After updating the editor, revoke previously uploaded blob URLs
+        // (they are no longer referenced in the editor content).
+        uploadedPendingPreviewsRef.current.forEach((previewUrl) => {
+          cleanupObjectUrl(previewUrl);
+          uploadedPendingPreviewsRef.current.delete(previewUrl);
+        });
+      } else {
+        // If the editor isn't being used (HTML mode or no editor), update
+        // the HTML value and then revoke the blob URLs immediately.
+        setHtmlValue(partialHtml);
+        uploadedPendingPreviewsRef.current.forEach((previewUrl) => {
+          cleanupObjectUrl(previewUrl);
+          uploadedPendingPreviewsRef.current.delete(previewUrl);
+        });
+      }
+
+      // Do not show a toast here; let the caller surface a single message.
       throw error;
     }
   }
@@ -855,9 +884,7 @@ export default function NoteEditorPanel({ note, onSave, onDiscard, onDelete }) {
         class: EDITOR_BODY_CLASS,
       },
       handlePaste(view, event) {
-        const clipboardItems = Array.from(
-          event.clipboardData?.items || [],
-        );
+        const clipboardItems = Array.from(event.clipboardData?.items || []);
         const imageItem = clipboardItems.find((item) =>
           item.type.startsWith("image/"),
         );
@@ -1223,9 +1250,26 @@ export default function NoteEditorPanel({ note, onSave, onDiscard, onDelete }) {
     try {
       const finalHtml = await uploadPendingImagesInHtml(html);
 
-      if (editor && !isHtmlMode) {
+      const shouldUpdateEditor = editor && !isHtmlMode && finalHtml !== html;
+
+      if (shouldUpdateEditor) {
         setEditorContentWithImageAlignments(editor, finalHtml);
+
+        // After updating the editor to the new HTML, revoke any uploaded
+        // preview object URLs that were waiting for replacement.
+        uploadedPendingPreviewsRef.current.forEach((previewUrl) => {
+          cleanupObjectUrl(previewUrl);
+          uploadedPendingPreviewsRef.current.delete(previewUrl);
+        });
+      } else {
+        // If we didn't update the editor (HTML mode or no change), it's
+        // safe to revoke the uploaded preview URLs now.
+        uploadedPendingPreviewsRef.current.forEach((previewUrl) => {
+          cleanupObjectUrl(previewUrl);
+          uploadedPendingPreviewsRef.current.delete(previewUrl);
+        });
       }
+
       setHtmlValue(finalHtml);
       await onSave({ title: trimmedTitle, content: finalHtml });
       if (!isNew) {

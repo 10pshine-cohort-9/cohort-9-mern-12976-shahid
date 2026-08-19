@@ -43,11 +43,17 @@ const createNote = async (req, res, next) => {
 
 const getAllNotes = async (req, res, next) => {
   try {
-    const notes = await Note.find({
-      userId: req.user._id,
-    }).sort({
-      updatedAt: -1,
-    });
+    const { search } = req.query;
+
+    const baseQuery = { userId: req.user._id };
+
+    if (search && String(search).trim()) {
+      const escaped = String(search).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      const re = new RegExp(escaped, "i");
+      baseQuery.$or = [{ title: re }, { content: re }];
+    }
+
+    const notes = await Note.find(baseQuery).sort({ updatedAt: -1 });
 
     logger.info({
       event: "GET_ALL_NOTES",
