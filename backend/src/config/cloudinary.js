@@ -1,6 +1,7 @@
 import "dotenv/config";
 import { v2 as cloudinary } from "cloudinary";
 import multer from "multer";
+import crypto from "crypto";
 import { CloudinaryStorage } from "multer-storage-cloudinary";
 
 const MAX_IMAGE_FILE_SIZE = 5 * 1024 * 1024;
@@ -40,8 +41,8 @@ cloudinary.config({
 
 function getSafePublicId(originalName = "image") {
   const baseName = originalName.replace(/\.[^/.]+$/, "");
-  
-  const randomPart = crypto.randomBytes(4).toString('hex');
+
+  const randomPart = crypto.randomBytes(4).toString("hex");
 
   return `${Date.now()}-${randomPart}-${baseName}`
     .toLowerCase()
@@ -50,17 +51,13 @@ function getSafePublicId(originalName = "image") {
     .slice(0, 80);
 }
 
-
-const uploadOptions = {
-  overwrite: false, 
-  public_id: getSafePublicId(originalName) 
-};
+// Note: uploadOptions removed because it referenced `originalName` which
+// is not defined in this module. Public IDs are generated per-file inside
+// the storage `params` using `getSafePublicId(file.originalname)`.
 
 function imageFileFilter(req, file, cb) {
   if (!ALLOWED_IMAGE_MIME_TYPES.has(file.mimetype)) {
-    const error = new Error(
-      "Only JPG, PNG, and WEBP image files are allowed.",
-    );
+    const error = new Error("Only JPG, PNG, and WEBP image files are allowed.");
     error.statusCode = 400;
     cb(error);
     return;

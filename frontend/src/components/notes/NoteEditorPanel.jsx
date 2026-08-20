@@ -102,6 +102,10 @@ function getImageAlignmentStyle(value) {
   return "display: block; margin-left: auto; margin-right: auto";
 }
 
+function isBlobUrl(value) {
+  return typeof value === "string" && value.startsWith("blob:");
+}
+
 function normalizeHtmlForEditor(html) {
   if (!html) {
     return EMPTY_EDITOR_HTML;
@@ -684,101 +688,176 @@ export default function NoteEditorPanel({ note, onSave, onDiscard, onDelete }) {
   const [promptDialog, setPromptDialog] = useState(null);
   const [selectedImage, setSelectedImage] = useState(null);
   const imageInputRef = useRef(null);
+  const pendingImageFilesRef = useRef(new Map());
+  const uploadedPendingPreviewsRef = useRef(new Set());
 
-  function validateImageFile(file) {
-    if (!file) {
-      return "Please choose an image to upload.";
-    }
-
-    if (!ALLOWED_IMAGE_MIME_TYPES.has(file.type)) {
-      return "Please choose a JPG, PNG, or WEBP image.";
-    }
-
-    if (file.size > MAX_IMAGE_FILE_SIZE) {
-      return "Images must be 5MB or smaller.";
-    }
-
-    return null;
-  }
-
-  async function uploadAndInsertImage({ file, view }) {
-    const validationError = validateImageFile(file);
-
-    if (validationError) {
-      toast.error(validationError);
+  function cleanupObjectUrl(objectUrl) {
+    if (!isBlobUrl(objectUrl)) {
       return;
     }
 
-    const toastId = toast.loading("Uploading image...");
-
-    // Capture the selection bookmark BEFORE the async upload
-    // to preserve the insertion location even if the user types or clicks elsewhere.
-    let bookmark = null;
-    if (view) {
-      bookmark = view.state.selection.getBookmark();
-    } else if (editor?.view) {
-      bookmark = editor.view.state.selection.getBookmark();
-    }
-
     try {
-      const uploaded = await uploadNoteImageFile(file);
-      const uploadedUrl = uploaded?.url;
-
-      if (!uploadedUrl) {
-        throw new Error("No image URL was returned by the server.");
-      }
-
-      if (view) {
-        const imageNode = view.state.schema.nodes.image;
-
-        if (!imageNode) {
-          throw new Error("The editor could not create an image node.");
-        }
-
-        let transaction = view.state.tr;
-
-        // Restore the selection using the resolved bookmark
-        if (bookmark) {
-          const resolvedSelection = bookmark.resolve(view.state.doc);
-          transaction = transaction.setSelection(resolvedSelection);
-        }
-
-        transaction = transaction.replaceSelectionWith(
-          imageNode.create({
-            src: uploadedUrl,
-            alt: file.name || "Uploaded image",
-            align: DEFAULT_IMAGE_ALIGN,
-          }),
-        );
-
-        view.dispatch(transaction.scrollIntoView());
-      } else {
-        const chain = editor?.chain().focus();
-
-        if (bookmark && editor?.view) {
-          const resolvedSelection = bookmark.resolve(editor.view.state.doc);
-          chain.setTextSelection(resolvedSelection);
-        }
-
-        chain
-          ?.setImage({
-            src: uploadedUrl,
-            alt: file.name || "Uploaded image",
-            align: DEFAULT_IMAGE_ALIGN,
-          })
-          .run();
-      }
-
-      toast.success("Image uploaded successfully.", { id: toastId });
-    } catch (error) {
-      toast.error(
-        error.response?.data?.message ||
-          error.message ||
-          "Could not upload the image.",
-        { id: toastId },
-      );
+      URL.revokeObjectURL(objectUrl);
+    } catch {
+      // Ignore revoke errors for already released object URLs.
     }
   }
+
+  function clearPendingImage(objectUrl) {
+    cleanupObjectUrl(objectUrl);
+    pendingImageFilesRef.current.delete(objectUrl);
+  }
+
+  function clearAllPendingImages() {
+    pendingImageFilesRef.current.forEach((_, objectUrl) => {
+      cleanupObjectUrl(objectUrl);
+    });
+    pendingImageFilesRef.current.clear();
+  }
+
+  function createLocalImagePreview(file) {
+    if (!file) return null;
+
+    if (!ALLOWED_IMAGE_MIME_TYPES.has(file.type)) {
+      toast.error("Please choose a JPG, PNG, or WEBP image.");
+      return null;
+    }
+
+    if (file.size > MAX_IMAGE_FILE_SIZE) {
+      toast.error("Images must be 5MB or smaller.");
+      return null;
+    }
+
+    const previewUrl = URL.createObjectURL(file);
+    pendingImageFilesRef.current.set(previewUrl, file);
+    return previewUrl;
+  }
+
+  function insertLocalPreviewImage(view, file) {
+    const previewUrl = createLocalImagePreview(file);
+
+    if (!previewUrl) {
+      return;
+    }
+
+    const imageNode = view.state.schema.nodes.image;
+
+    if (!imageNode) {
+      return;
+    }
+
+    const transaction = view.state.tr.replaceSelectionWith(
+      imageNode.create({
+        src: previewUrl,
+        alt: file.name || "Local image preview",
+        align: DEFAULT_IMAGE_ALIGN,
+      }),
+    );
+
+    view.dispatch(transaction.scrollIntoView());
+  }
+
+  async function uploadPendingImagesInHtml(html) {
+    if (!html || typeof window === "undefined" || !window.DOMParser) {
+      return html;
+    }
+
+    const parser = new window.DOMParser();
+    const doc = parser.parseFromString(html, "text/html");
+    const imageElements = Array.from(doc.querySelectorAll("img"));
+    const pendingSources = Array.from(
+      new Set(
+        imageElements
+          .map((imageElement) => imageElement.getAttribute("src"))
+          .filter(isBlobUrl),
+      ),
+    );
+
+    if (!pendingSources.length) {
+      return html;
+    }
+
+    const toastId = toast.loading(
+      pendingSources.length === 1
+        ? "Uploading image..."
+        : `Uploading ${pendingSources.length} images...`,
+    );
+    const uploadedUrlByPreview = new Map();
+
+    try {
+      for (const previewUrl of pendingSources) {
+        const file = pendingImageFilesRef.current.get(previewUrl);
+
+        if (!file) {
+          throw new Error(
+            "A local image preview could not be resolved. Please re-add the image and try again.",
+          );
+        }
+
+        const uploaded = await uploadNoteImageFile(file);
+        const uploadedUrl = uploaded?.url;
+
+        if (!uploadedUrl) {
+          throw new Error("No image URL was returned by the server.");
+        }
+
+        // Immediately record and apply this single-image replacement so
+        // successfully uploaded images are reflected even if a later upload fails.
+        uploadedUrlByPreview.set(previewUrl, uploadedUrl);
+
+        // Replace occurrences of this preview URL in the parsed document
+        // so the returned HTML reflects the successful upload.
+        imageElements.forEach((imageElement) => {
+          const currentSrc = imageElement.getAttribute("src");
+          if (currentSrc === previewUrl) {
+            imageElement.setAttribute("src", uploadedUrl);
+          }
+        });
+
+        // Remove the pending entry so the file is no longer considered pending.
+        // Do NOT revoke the object URL here: we must preserve the blob URL
+        // until the DOM has been updated to use the uploaded URL.
+        pendingImageFilesRef.current.delete(previewUrl);
+        uploadedPendingPreviewsRef.current.add(previewUrl);
+      }
+
+      // Success notification for the whole batch
+      toast.success("Images uploaded successfully.", { id: toastId });
+      return doc.body.innerHTML || html;
+    } catch (error) {
+      // Clear the loading toast but do not show an error here — the caller
+      // (handleSave) will show a single user-facing error message.
+      try {
+        toast.dismiss(toastId);
+      } catch {}
+      // Apply any successful replacements to the editor so partial progress
+      // is preserved before rethrowing the error to the caller.
+      const partialHtml = doc.body.innerHTML || html;
+
+      if (editor && !isHtmlMode) {
+        setEditorContentWithImageAlignments(editor, partialHtml);
+
+        // After updating the editor, revoke previously uploaded blob URLs
+        // (they are no longer referenced in the editor content).
+        uploadedPendingPreviewsRef.current.forEach((previewUrl) => {
+          cleanupObjectUrl(previewUrl);
+          uploadedPendingPreviewsRef.current.delete(previewUrl);
+        });
+      } else {
+        // If the editor isn't being used (HTML mode or no editor), update
+        // the HTML value and then revoke the blob URLs immediately.
+        setHtmlValue(partialHtml);
+        uploadedPendingPreviewsRef.current.forEach((previewUrl) => {
+          cleanupObjectUrl(previewUrl);
+          uploadedPendingPreviewsRef.current.delete(previewUrl);
+        });
+      }
+
+      // Do not show a toast here; let the caller surface a single message.
+      throw error;
+    }
+  }
+
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
@@ -821,7 +900,7 @@ export default function NoteEditorPanel({ note, onSave, onDiscard, onDelete }) {
         }
 
         event.preventDefault();
-        void uploadAndInsertImage({ file, view });
+        insertLocalPreviewImage(view, file);
         return true;
       },
       handleDrop(view, event) {
@@ -835,7 +914,7 @@ export default function NoteEditorPanel({ note, onSave, onDiscard, onDelete }) {
         }
 
         event.preventDefault();
-        void uploadAndInsertImage({ file: imageFile, view });
+        insertLocalPreviewImage(view, imageFile);
         return true;
       },
     },
@@ -882,12 +961,24 @@ export default function NoteEditorPanel({ note, onSave, onDiscard, onDelete }) {
     };
   }, [editor]);
 
+  useEffect(() => {
+    const pendingImages = pendingImageFilesRef.current;
+
+    return () => {
+      pendingImages.forEach((_, objectUrl) => {
+        cleanupObjectUrl(objectUrl);
+      });
+      pendingImages.clear();
+    };
+  }, []);
+
   function resetValidationState() {
     setTitleError("");
     setContentError("");
   }
 
   function restoreOriginalNote() {
+    clearAllPendingImages();
     const nextHtml = normalizeHtmlForEditor(note?.content || EMPTY_EDITOR_HTML);
     setTitle(note?.title || "");
     setHtmlValue(nextHtml);
@@ -1095,21 +1186,24 @@ export default function NoteEditorPanel({ note, onSave, onDiscard, onDelete }) {
     imageInputRef.current?.click();
   }
 
-async function handleImageSelected(event) {
-  // Capture the input element before the async operation
-  const input = event.target;
-  const file = input.files?.[0];
+  async function handleImageSelected(event) {
+    const file = event.target.files?.[0];
+    const previewUrl = createLocalImagePreview(file);
 
-  try {
-    await uploadAndInsertImage({ file });
-  } catch (error) {
-    // Prevent unhandled promise rejections if the helper throws before its internal try/catch
-    console.error("Unexpected error during image upload:", error);
-  } finally {
-    // Ensure the input is always cleared, allowing the user to select the same file again if it failed
-    input.value = "";
+    if (previewUrl) {
+      editor
+        ?.chain()
+        .focus()
+        .setImage({
+          src: previewUrl,
+          alt: file?.name || "Local image preview",
+          align: DEFAULT_IMAGE_ALIGN,
+        })
+        .run();
+    }
+
+    event.target.value = "";
   }
-}
 
   function updateSelectedImageAttributes(attributes) {
     if (!editor || !selectedImage) return;
@@ -1154,7 +1248,30 @@ async function handleImageSelected(event) {
 
     setSaving(true);
     try {
-      await onSave({ title: trimmedTitle, content: html });
+      const finalHtml = await uploadPendingImagesInHtml(html);
+
+      const shouldUpdateEditor = editor && !isHtmlMode && finalHtml !== html;
+
+      if (shouldUpdateEditor) {
+        setEditorContentWithImageAlignments(editor, finalHtml);
+
+        // After updating the editor to the new HTML, revoke any uploaded
+        // preview object URLs that were waiting for replacement.
+        uploadedPendingPreviewsRef.current.forEach((previewUrl) => {
+          cleanupObjectUrl(previewUrl);
+          uploadedPendingPreviewsRef.current.delete(previewUrl);
+        });
+      } else {
+        // If we didn't update the editor (HTML mode or no change), it's
+        // safe to revoke the uploaded preview URLs now.
+        uploadedPendingPreviewsRef.current.forEach((previewUrl) => {
+          cleanupObjectUrl(previewUrl);
+          uploadedPendingPreviewsRef.current.delete(previewUrl);
+        });
+      }
+
+      setHtmlValue(finalHtml);
+      await onSave({ title: trimmedTitle, content: finalHtml });
       if (!isNew) {
         setIsEditing(false);
       }
