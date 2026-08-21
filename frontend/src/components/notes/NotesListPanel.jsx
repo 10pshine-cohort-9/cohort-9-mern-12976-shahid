@@ -4,6 +4,8 @@ import { formatDate } from "../../utils/formatDate";
 import { sanitizeHtml } from "../../utils/sanitizeHtml";
 import DeleteNoteDialog from "./DeleteNoteDialog";
 import Loader from "../common/Loader";
+import PropTypes from "prop-types";
+import { noteShape } from "../../utils/propTypes";
 
 // Strip HTML and truncate to a short preview string
 function getPreview(html) {
@@ -76,7 +78,8 @@ export default function NotesListPanel({
         {/* Add new note button */}
         <button
           onClick={onNewNote}
-          className="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-500 dark:text-gray-400 border border-dashed border-gray-300 dark:border-gray-700 rounded-lg hover:border-indigo-400 dark:hover:border-indigo-500 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
+          className="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-500 dark:text-gray-400 border border-dashed border-gray-300 dark:border-gray-700 rounded-lg hover:border-indigo-400 dark:hover:border-indigo-500 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors hover:cursor-pointer
+          "
         >
           <Plus className="w-4 h-4" />
           Add new note
@@ -190,3 +193,15 @@ export default function NotesListPanel({
     </section>
   );
 }
+
+NotesListPanel.propTypes = {
+  notes: PropTypes.arrayOf(noteShape).isRequired,
+  loading: PropTypes.bool.isRequired,
+  error: PropTypes.string.isRequired,
+  searchQuery: PropTypes.string.isRequired,
+  onSearchChange: PropTypes.func.isRequired,
+  activeNoteId: PropTypes.string,
+  onSelectNote: PropTypes.func.isRequired,
+  onNewNote: PropTypes.func.isRequired,
+  onDeleteNote: PropTypes.func.isRequired,
+};

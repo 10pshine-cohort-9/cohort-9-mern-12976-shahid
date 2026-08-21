@@ -90,8 +90,8 @@ function createImageUpload({ folder, transformation }) {
     limits: {
       fileSize: MAX_IMAGE_FILE_SIZE,
       files: 1,
-      fields: 0,
-      parts: 1,
+      fields: 10,
+      parts: 20,
     },
   });
 }

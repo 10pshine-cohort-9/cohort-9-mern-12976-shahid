@@ -30,6 +30,7 @@ import DeleteNoteDialog from "./DeleteNoteDialog";
 import { uploadNoteImageFile } from "../../api/uploadApi";
 import { sanitizeHtml } from "../../utils/sanitizeHtml";
 import PropTypes from "prop-types";
+import { noteShape } from "../../utils/propTypes";
 
 // ── Toolbar button ───────────────────────────────────────────────
 function ToolbarBtn({ onClick, active, title, children }) {
@@ -709,10 +710,7 @@ export default function NoteEditorPanel({ note, onSave, onDiscard, onDelete }) {
   }
 
   function clearAllPendingImages() {
-    pendingImageFilesRef.current.forEach((_, objectUrl) => {
-      cleanupObjectUrl(objectUrl);
-    });
-    pendingImageFilesRef.current.clear();
+    Array.from(pendingImageFilesRef.current.keys()).forEach(clearPendingImage);
   }
 
   function createLocalImagePreview(file) {
@@ -801,51 +799,33 @@ export default function NoteEditorPanel({ note, onSave, onDiscard, onDelete }) {
           throw new Error("No image URL was returned by the server.");
         }
 
-        // Immediately record and apply this single-image replacement so
-        // successfully uploaded images are reflected even if a later upload fails.
         uploadedUrlByPreview.set(previewUrl, uploadedUrl);
 
-        // Replace occurrences of this preview URL in the parsed document
-        // so the returned HTML reflects the successful upload.
         imageElements.forEach((imageElement) => {
           const currentSrc = imageElement.getAttribute("src");
           if (currentSrc === previewUrl) {
             imageElement.setAttribute("src", uploadedUrl);
           }
         });
-
-        // Remove the pending entry so the file is no longer considered pending.
-        // Do NOT revoke the object URL here: we must preserve the blob URL
-        // until the DOM has been updated to use the uploaded URL.
         pendingImageFilesRef.current.delete(previewUrl);
         uploadedPendingPreviewsRef.current.add(previewUrl);
       }
 
-      // Success notification for the whole batch
       toast.success("Images uploaded successfully.", { id: toastId });
       return doc.body.innerHTML || html;
     } catch (error) {
-      // Clear the loading toast but do not show an error here — the caller
-      // (handleSave) will show a single user-facing error message.
-      try {
-        toast.dismiss(toastId);
-      } catch {}
-      // Apply any successful replacements to the editor so partial progress
-      // is preserved before rethrowing the error to the caller.
+      toast.dismiss(toastId);
+
       const partialHtml = doc.body.innerHTML || html;
 
       if (editor && !isHtmlMode) {
         setEditorContentWithImageAlignments(editor, partialHtml);
 
-        // After updating the editor, revoke previously uploaded blob URLs
-        // (they are no longer referenced in the editor content).
         uploadedPendingPreviewsRef.current.forEach((previewUrl) => {
           cleanupObjectUrl(previewUrl);
           uploadedPendingPreviewsRef.current.delete(previewUrl);
         });
       } else {
-        // If the editor isn't being used (HTML mode or no editor), update
-        // the HTML value and then revoke the blob URLs immediately.
         setHtmlValue(partialHtml);
         uploadedPendingPreviewsRef.current.forEach((previewUrl) => {
           cleanupObjectUrl(previewUrl);
@@ -853,7 +833,6 @@ export default function NoteEditorPanel({ note, onSave, onDiscard, onDelete }) {
         });
       }
 
-      // Do not show a toast here; let the caller surface a single message.
       throw error;
     }
   }
@@ -1309,7 +1288,7 @@ export default function NoteEditorPanel({ note, onSave, onDiscard, onDelete }) {
             <button
               type="button"
               onClick={() => setShowDeleteDialog(true)}
-              className="flex items-center gap-1 rounded px-2 py-1 text-xs text-red-500 transition-colors hover:bg-red-50 hover:text-red-600 dark:text-red-400 dark:hover:bg-red-900/20 dark:hover:text-red-300"
+              className="flex items-center gap-1 rounded px-2 py-1 text-xs text-red-500 transition-colors hover:bg-red-50 hover:text-red-600 dark:text-red-400 dark:hover:bg-red-900/20 dark:hover:text-red-300 hover:cursor-pointer"
             >
               <Trash2 className="w-3 h-3" />
               Delete
@@ -1323,7 +1302,7 @@ export default function NoteEditorPanel({ note, onSave, onDiscard, onDelete }) {
                 className={`px-2.5 py-1 rounded-md transition-colors ${
                   !isHtmlMode
                     ? "bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm"
-                    : "text-gray-500 dark:text-gray-400"
+                    : "text-gray-500 dark:text-gray-400 hover:cursor-pointer"
                 }`}
               >
                 Rich Text
@@ -1334,7 +1313,7 @@ export default function NoteEditorPanel({ note, onSave, onDiscard, onDelete }) {
                 className={`px-2.5 py-1 rounded-md transition-colors ${
                   isHtmlMode
                     ? "bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm"
-                    : "text-gray-500 dark:text-gray-400"
+                    : "text-gray-500 dark:text-gray-400 hover:cursor-pointer"
                 }`}
               >
                 HTML
@@ -1343,7 +1322,7 @@ export default function NoteEditorPanel({ note, onSave, onDiscard, onDelete }) {
           )}
           <button
             onClick={handleCancelEditing}
-            className="flex items-center gap-1 rounded px-2 py-1 text-xs text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600 dark:text-gray-500 dark:hover:bg-gray-800 dark:hover:text-gray-300"
+            className="flex items-center gap-1 rounded px-2 py-1 text-xs text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600 dark:text-gray-500 dark:hover:bg-gray-800 dark:hover:text-gray-300 hover: cursor-pointer"
           >
             <X className="w-3 h-3" />
             {isEditing ? (isNew ? "Discard" : "Cancel") : "Close"}
@@ -1352,7 +1331,7 @@ export default function NoteEditorPanel({ note, onSave, onDiscard, onDelete }) {
             <button
               onClick={handleSave}
               disabled={saving}
-              className="flex items-center gap-1.5 rounded-lg bg-indigo-600 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-indigo-700 disabled:opacity-50"
+              className="flex items-center gap-1.5 rounded-lg bg-indigo-600 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-indigo-700 disabled:opacity-50 hover: cursor-pointer"
             >
               <Save className="w-3 h-3" />
               {saving ? "Saving…" : "Save"}
@@ -1360,7 +1339,7 @@ export default function NoteEditorPanel({ note, onSave, onDiscard, onDelete }) {
           ) : (
             <button
               onClick={handleStartEditing}
-              className="rounded-lg bg-indigo-600 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-indigo-700"
+              className="rounded-lg bg-indigo-600 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-indigo-700 hover: cursor-pointer"
             >
               Edit
             </button>
@@ -1502,6 +1481,13 @@ export default function NoteEditorPanel({ note, onSave, onDiscard, onDelete }) {
     </div>
   );
 }
+
+NoteEditorPanel.propTypes = {
+  note: noteShape,
+  onSave: PropTypes.func.isRequired,
+  onDiscard: PropTypes.func.isRequired,
+  onDelete: PropTypes.func.isRequired,
+};
 
 function formatDateTime(dateString) {
   if (!dateString) return "";

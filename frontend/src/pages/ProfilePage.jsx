@@ -23,6 +23,8 @@ const ALLOWED_IMAGE_MIME_TYPES = new Set([
   "image/webp",
 ]);
 
+/** @typedef {{ name?: string, password?: string, imageFile?: File }} ProfileUpdatePayload */
+
 export default function ProfilePage() {
   const { user, updateUser, logout } = useAuth();
   const navigate = useNavigate();
@@ -47,6 +49,7 @@ export default function ProfilePage() {
     fileInputRef.current?.click();
   }
 
+  /** @param {Event} e */
   function handleImageChange(e) {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -68,6 +71,7 @@ export default function ProfilePage() {
     setPreviewUrl(URL.createObjectURL(file));
   }
 
+  /** @param {SubmitEvent} e */
   async function handleSave(e) {
     e.preventDefault();
 
@@ -184,6 +188,9 @@ export default function ProfilePage() {
                     className="w-full pl-9 pr-3.5 py-2.5 text-sm border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:border-transparent transition-colors"
                   />
                 </div>
+                <p className="mt-1 text-xs text-gray-400 dark:text-gray-500">
+                  You can update your display name
+                </p>
               </div>
 
               <div>
@@ -202,7 +209,7 @@ export default function ProfilePage() {
                     type="email"
                     value={user.email}
                     disabled
-                    className="w-full pl-9 pr-3.5 py-2.5 text-sm border border-gray-200 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-900 text-gray-400 dark:text-gray-500 cursor-not-allowed transition-colors"
+                    className="w-full pl-9 pr-3.5 py-2.5 text-sm border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:border-transparent transition-colors"
                   />
                 </div>
                 <p className="mt-1 text-xs text-gray-400 dark:text-gray-500">
@@ -252,7 +259,7 @@ export default function ProfilePage() {
                 <button
                   type="submit"
                   disabled={saving}
-                  className="w-full flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600 disabled:opacity-60 text-white font-medium py-2.5 rounded-lg text-sm transition-colors"
+                  className="w-full flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600 disabled:opacity-60 text-white font-medium py-2.5 rounded-lg text-sm transition-colors hover:cursor-pointer"
                 >
                   <Save className="w-4 h-4" />
                   {saving ? "Saving…" : "Save Changes"}
@@ -261,7 +268,7 @@ export default function ProfilePage() {
                 <button
                   type="button"
                   onClick={() => navigate("/notes")}
-                  className="w-full flex items-center justify-center gap-2 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300 font-medium py-2.5 rounded-lg text-sm transition-colors"
+                  className="w-full flex items-center justify-center gap-2 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300 font-medium py-2.5 rounded-lg text-sm transition-colors hover:cursor-pointer"
                 >
                   <ArrowLeft className="w-4 h-4" />
                   Back to Notes
@@ -270,7 +277,7 @@ export default function ProfilePage() {
                 <button
                   type="button"
                   onClick={handleLogout}
-                  className="w-full flex items-center justify-center gap-2 border border-gray-100 dark:border-gray-800 hover:bg-red-50 dark:hover:bg-red-900/20 text-red-500 dark:text-red-400 hover:text-red-600 dark:hover:text-red-300 font-medium py-2.5 rounded-lg text-sm transition-colors"
+                  className="w-full flex items-center justify-center gap-2 border border-gray-100 dark:border-gray-800 hover:bg-red-50 dark:hover:bg-red-900/20 text-red-500 dark:text-red-400 hover:text-red-600 dark:hover:text-red-300 font-medium py-2.5 rounded-lg text-sm transition-colors hover:cursor-pointer"
                 >
                   <LogOut className="w-4 h-4" />
                   Log out

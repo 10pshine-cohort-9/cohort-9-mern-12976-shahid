@@ -1,38 +1,46 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   FileText,
-  Plus,
+  // Plus,
   Settings,
   LogOut,
   ChevronDown,
   Sun,
   Moon,
   User,
-} from 'lucide-react';
-import { useAuth } from '../../context/AuthContext';
-import { useTheme } from '../../context/ThemeContext';
-import { getUserImage } from '../../utils/userImage';
+} from "lucide-react";
+import { useAuth } from "../../context/AuthContext";
+import { useTheme } from "../../context/ThemeContext";
+import { getUserImage } from "../../utils/userImage";
+import { removeToken } from "../../utils/authStorage";
 
-export default function Sidebar({ onNewNote }) {
+export default function Sidebar() {
+  /** @type {{ user: { name?: string, email?: string, avatarUrl?: string } | null, logout: () => Promise<void> }} */
   const { user, logout } = useAuth();
+  /** @type {{ theme: "light" | "dark", toggleTheme: () => void }} */
   const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
   const [userMenuOpen, setUserMenuOpen] = useState(false);
 
   async function handleLogout() {
-    await logout();
-    navigate('/login');
+    try {
+      await logout();
+    } catch {
+      removeToken();
+    } finally {
+      navigate("/login");
+    }
   }
 
-  const initials = user?.name?.charAt(0).toUpperCase() || '?';
+  const initials = user?.name?.charAt(0).toUpperCase() || "?";
   const userImage = getUserImage(user);
 
   return (
-    <aside className="hidden h-full w-56 flex-shrink-0 flex-col border-r border-gray-100 bg-white transition-colors dark:border-gray-800 dark:bg-gray-900 lg:flex">
+    <aside className="hidden h-full w-56 shrink-0 flex-col border-r border-gray-100 bg-white transition-colors dark:border-gray-800 dark:bg-gray-900 lg:flex">
       {/* App brand */}
       <div className="px-4 pt-5 pb-3 flex items-center gap-2">
-        <div className="w-7 h-7 rounded-lg bg-indigo-600 flex items-center justify-center flex-shrink-0">
+        <div className="w-7 h-7 rounded-lg bg-indigo-600 flex items-center justify-center shrink-0">
           <FileText className="w-4 h-4 text-white" />
         </div>
         <span className="text-sm font-bold text-gray-900 dark:text-white tracking-tight">
@@ -46,7 +54,7 @@ export default function Sidebar({ onNewNote }) {
           onClick={() => setUserMenuOpen((v) => !v)}
           className="flex items-center gap-2 w-full text-left hover:bg-gray-50 dark:hover:bg-gray-800 rounded-lg px-2 py-1.5 transition-colors hover:cursor-pointer"
         >
-          <div className="w-8 h-8 rounded-full bg-indigo-100 dark:bg-indigo-900 text-indigo-600 dark:text-indigo-400 flex items-center justify-center text-sm font-semibold flex-shrink-0 overflow-hidden">
+          <div className="w-8 h-8 rounded-full bg-indigo-100 dark:bg-indigo-900 text-indigo-600 dark:text-indigo-400 flex items-center justify-center text-sm font-semibold shrink-0 overflow-hidden">
             {userImage ? (
               <img
                 src={userImage}
@@ -79,14 +87,14 @@ export default function Sidebar({ onNewNote }) {
                 navigate("/profile");
                 setUserMenuOpen(false);
               }}
-              className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
+              className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2 hover:cursor-pointer transition-colors"
             >
               <User className="w-3.5 h-3.5" />
               Profile
             </button>
             <button
               onClick={handleLogout}
-              className="w-full text-left px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 flex items-center gap-2"
+              className="w-full text-left px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 flex items-center gap-2 hover:cursor-pointer transition-colors "
             >
               <LogOut className="w-3.5 h-3.5" />
               Log out
@@ -108,7 +116,7 @@ export default function Sidebar({ onNewNote }) {
 
       {/* Bottom actions */}
       <div className="px-3 py-3 border-t border-gray-100 dark:border-gray-800 space-y-0.5">
-        <button
+        {/* <button
           onClick={onNewNote}
           className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors hover:cursor-pointer"
         >
@@ -116,6 +124,7 @@ export default function Sidebar({ onNewNote }) {
           Add new note
         </button>
 
+        */}
         <button
           onClick={() => navigate("/profile")}
           className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors hover:cursor-pointer"

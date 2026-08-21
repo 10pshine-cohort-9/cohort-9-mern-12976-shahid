@@ -73,10 +73,14 @@ export function AuthProvider({ children }) {
       setUser(newUser);
       return newUser;
     } catch (error) {
-      throw new Error(
+      const registrationError = new Error(
         error.response?.data?.message || error.message || "Registration failed",
         { cause: error },
       );
+      if (error.response) {
+        registrationError.response = error.response;
+      }
+      throw registrationError;
     }
   }
 
@@ -86,23 +90,23 @@ export function AuthProvider({ children }) {
       const trimmedName = name?.trim();
       const trimmedPassword = password?.trim();
 
-     if (trimmedName || trimmedPassword) {
-       const res = await apiClient.put("/auth/profile", {
-         name: trimmedName,
-         // Preserving the original password per previous security fix constraints,
-         // assuming 'password' is in scope. Otherwise, use trimmedPassword.
-         password: password || undefined,
-       });
+      if (trimmedName || trimmedPassword) {
+        const res = await apiClient.put("/auth/profile", {
+          name: trimmedName,
+          // Preserving the original password per previous security fix constraints,
+          // assuming 'password' is in scope. Otherwise, use trimmedPassword.
+          password: password || undefined,
+        });
 
-       updatedUser = res.data?.data?.user ?? res.data?.user ?? res.data;
-       setUser(updatedUser); // Sync state immediately in case the subsequent image upload fails
-     }
+        updatedUser = res.data?.data?.user ?? res.data?.user ?? res.data;
+        setUser(updatedUser); // Sync state immediately in case the subsequent image upload fails
+      }
 
-     if (imageFile) {
-       const uploaded = await uploadProfileImageFile(imageFile);
-       updatedUser = uploaded?.user ?? uploaded;
-       setUser(updatedUser); // Sync state again after a successful image upload
-     }
+      if (imageFile) {
+        const uploaded = await uploadProfileImageFile(imageFile);
+        updatedUser = uploaded?.user ?? uploaded;
+        setUser(updatedUser); // Sync state again after a successful image upload
+      }
       return updatedUser;
     } catch (error) {
       throw new Error(

@@ -1,4 +1,5 @@
-import { Plus } from 'lucide-react';
+import { Plus } from "lucide-react";
+import PropTypes from "prop-types";
 
 export default function EmptyEditorState({ onNewNote }) {
   return (
@@ -12,7 +13,7 @@ export default function EmptyEditorState({ onNewNote }) {
       </p>
       <button
         onClick={onNewNote}
-        className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors"
+        className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors hover:cursor-pointer"
       >
         <Plus className="w-4 h-4" />
         New Note
@@ -20,3 +21,7 @@ export default function EmptyEditorState({ onNewNote }) {
     </div>
   );
 }
+
+EmptyEditorState.propTypes = {
+  onNewNote: PropTypes.func.isRequired,
+};
