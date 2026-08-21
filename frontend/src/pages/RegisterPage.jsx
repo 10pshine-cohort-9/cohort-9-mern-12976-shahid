@@ -1,17 +1,17 @@
-import { useState } from 'react';
-import { Link, useNavigate, Navigate } from 'react-router-dom';
-import toast from 'react-hot-toast';
-import { User, Mail, Lock, FileText } from 'lucide-react';
-import { useAuth } from '../context/AuthContext';
+import { useState } from "react";
+import { Link, useNavigate, Navigate } from "react-router-dom";
+import toast from "react-hot-toast";
+import { User, Mail, Lock, FileText } from "lucide-react";
+import { useAuth } from "../context/AuthContext";
 
 export default function RegisterPage() {
   const { register, user } = useAuth();
   const navigate = useNavigate();
 
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
   // Already logged in — send straight to notes
@@ -19,9 +19,9 @@ export default function RegisterPage() {
 
   async function handleSubmit(e) {
     e.preventDefault();
-    setError('');
+    setError("");
     if (!name.trim() || !email.trim() || !password) {
-      const message = 'Please fill in all fields';
+      const message = "Please fill in all fields";
       setError(message);
       toast.error(message);
       return;
@@ -29,10 +29,11 @@ export default function RegisterPage() {
     setLoading(true);
     try {
       await register(name.trim(), email.trim(), password);
-      toast.success('Account created successfully');
-      navigate('/notes');
+      toast.success("Account created successfully");
+      navigate("/notes");
     } catch (err) {
-      const message = err.response?.data?.message || 'Registration failed. Please try again.';
+      const message =
+        err.response?.data?.message || "Registration failed. Please try again.";
       setError(message);
       toast.error(message);
     } finally {
@@ -43,21 +44,26 @@ export default function RegisterPage() {
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-950 flex items-center justify-center px-4 transition-colors">
       <div className="w-full max-w-sm">
-
         {/* Brand */}
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-indigo-600 mb-3">
             <FileText className="w-6 h-6 text-white" />
           </div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Create an account</h1>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Start organising your thoughts</p>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+            Create an account
+          </h1>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+            Start organising your thoughts
+          </p>
         </div>
 
         <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 p-8 transition-colors">
           <form onSubmit={handleSubmit} className="space-y-4" noValidate>
-
             <div>
-              <label htmlFor="name" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+              <label
+                htmlFor="name"
+                className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5"
+              >
                 Name
               </label>
               <div className="relative flex items-center">
@@ -77,7 +83,10 @@ export default function RegisterPage() {
             </div>
 
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+              <label
+                htmlFor="email"
+                className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5"
+              >
                 Email
               </label>
               <div className="relative flex items-center">
@@ -97,7 +106,10 @@ export default function RegisterPage() {
             </div>
 
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+              <label
+                htmlFor="password"
+                className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5"
+              >
                 Password
               </label>
               <div className="relative flex items-center">
@@ -125,16 +137,19 @@ export default function RegisterPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600 disabled:opacity-60 text-white font-medium py-2.5 rounded-lg text-sm transition-colors"
+              className="w-full bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600 disabled:opacity-60 text-white font-medium py-2.5 rounded-lg text-sm transition-colors hover:cursor-pointer"
             >
-              {loading ? 'Creating account…' : 'Create account'}
+              {loading ? "Creating account…" : "Create account"}
             </button>
           </form>
         </div>
 
         <p className="mt-5 text-center text-sm text-gray-500 dark:text-gray-400">
-          Already have an account?{' '}
-          <Link to="/login" className="text-indigo-600 dark:text-indigo-400 font-medium hover:underline">
+          Already have an account?{" "}
+          <Link
+            to="/login"
+            className="text-indigo-600 dark:text-indigo-400 font-medium hover:underline"
+          >
             Sign in
           </Link>
         </p>

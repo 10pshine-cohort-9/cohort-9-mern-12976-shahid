@@ -2,7 +2,13 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import { FileText, Plus, User } from "lucide-react";
-import apiClient from "../../api/apiClient";
+import {
+  createNote,
+  deleteNote,
+  getNote,
+  getNotes,
+  updateNote,
+} from "../../api/notesApi";
 import Sidebar from "./Sidebar";
 import Loader from "../common/Loader";
 import NotesListPanel from "../notes/NotesListPanel";
@@ -32,12 +38,7 @@ export default function AppShell() {
     setFetchError("");
 
     try {
-      const params = search.trim() ? { search: search.trim() } : {};
-      const res = await apiClient.get("/notes", {
-        params,
-        signal: controller.signal,
-      });
-      const notes = res.data?.data?.notes ?? res.data?.notes ?? [];
+      const notes = await getNotes(search, controller.signal);
       setNotes(notes);
     } catch (err) {
       if (err.name === "CanceledError" || err.code === "ERR_CANCELED") {
@@ -62,14 +63,11 @@ export default function AppShell() {
     }
     let isCancelled = false;
 
-    apiClient
-      .get(`/notes/${activeNoteId}`)
-      .then((res) => {
+    getNote(activeNoteId)
+      .then((note) => {
         if (isCancelled) {
           return;
         }
-        // Support both { data: { note } } and { note } response shapes
-        const note = res.data?.data?.note ?? res.data?.note ?? res.data;
         setActiveNote(note);
       })
       .catch((err) => {
@@ -113,44 +111,35 @@ export default function AppShell() {
   async function handleSaveNote({ title, content }) {
     try {
       if (activeNoteId === "new") {
-        const res = await apiClient.post("/notes", { title, content });
-        // Support both { data: { note } } and { note } response shapes
-        const created = mergeSavedContent(
-          res.data?.data?.note ?? res.data?.note ?? res.data,
-          { title, content },
-        );
+        const note = await createNote({ title, content });
+        const created = mergeSavedContent(note, { title, content });
         setNotes((prev) => [created, ...prev]);
         setActiveNoteId(created._id);
         setActiveNote(created);
         return;
       }
 
-      const res = await apiClient.put(`/notes/${activeNoteId}`, {
+      const note = await updateNote(activeNoteId, {
         title,
         content,
       });
-      // Support both { data: { note } } and { note } response shapes
-      const updated = mergeSavedContent(
-        res.data?.data?.note ?? res.data?.note ?? res.data,
-        {
-          ...(activeNote || {}),
-          title,
-          content,
-        },
-      );
+      const updated = mergeSavedContent(note, {
+        ...(activeNote || {}),
+        title,
+        content,
+      });
       setNotes((prev) =>
         prev.map((n) => (n._id === updated._id ? updated : n)),
       );
       setActiveNote(updated);
     } catch (err) {
       toast.error(err.response?.data?.message || "Could not save note.");
-      // keep editor state intact so the user can retry
     }
   }
 
   async function handleDeleteNote(note) {
     try {
-      await apiClient.delete(`/notes/${note._id}`);
+      await deleteNote(note._id);
       setNotes((prev) => prev.filter((n) => n._id !== note._id));
       if (activeNoteId === note._id) {
         setActiveNoteId(null);
@@ -159,7 +148,6 @@ export default function AppShell() {
       toast.success("Note deleted");
     } catch (err) {
       toast.error(err.response?.data?.message || "Could not delete note.");
-      // don't rethrow; callers should handle failure without unhandled rejections
     }
   }
 
@@ -206,11 +194,11 @@ export default function AppShell() {
 
       <div className="flex min-h-0 flex-1 overflow-hidden">
         {/* Desktop sidebar */}
-        <Sidebar onNewNote={handleNewNote} />
+        <Sidebar />
 
         {/* Notes list */}
         <div
-          className={`${showEditor ? "hidden md:flex" : "flex"} min-h-0 flex-shrink-0`}
+          className={`${showEditor ? "hidden md:flex" : "flex"} min-h-0 shrink-0`}
         >
           <NotesListPanel
             notes={notes}

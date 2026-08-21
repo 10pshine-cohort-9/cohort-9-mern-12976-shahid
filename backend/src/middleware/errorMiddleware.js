@@ -23,6 +23,24 @@ const errorHandler = (err, req, res, next) => {
     });
   }
 
+  if (err.name === "ValidationError") {
+    return res.status(400).json({
+      success: false,
+      message: "Invalid request data.",
+      errors: Object.values(err.errors).map(({ path, message }) => ({
+        path,
+        message,
+      })),
+    });
+  }
+
+  if (err.code === 11000) {
+    return res.status(409).json({
+      success: false,
+      message: "A record with that value already exists.",
+    });
+  }
+
   logger.error({
     event: "APPLICATION_ERROR",
     message: err.message,
