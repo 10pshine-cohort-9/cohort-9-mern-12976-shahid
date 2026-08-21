@@ -30,6 +30,7 @@ import DeleteNoteDialog from "./DeleteNoteDialog";
 import { uploadNoteImageFile } from "../../api/uploadApi";
 import { sanitizeHtml } from "../../utils/sanitizeHtml";
 import PropTypes from "prop-types";
+import { noteShape } from "../../utils/propTypes";
 
 // ── Toolbar button ───────────────────────────────────────────────
 function ToolbarBtn({ onClick, active, title, children }) {
@@ -1301,7 +1302,7 @@ export default function NoteEditorPanel({ note, onSave, onDiscard, onDelete }) {
                 className={`px-2.5 py-1 rounded-md transition-colors ${
                   !isHtmlMode
                     ? "bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm"
-                    : "text-gray-500 dark:text-gray-400 hover: cursor-pointer"
+                    : "text-gray-500 dark:text-gray-400 hover:cursor-pointer"
                 }`}
               >
                 Rich Text
@@ -1312,7 +1313,7 @@ export default function NoteEditorPanel({ note, onSave, onDiscard, onDelete }) {
                 className={`px-2.5 py-1 rounded-md transition-colors ${
                   isHtmlMode
                     ? "bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm"
-                    : "text-gray-500 dark:text-gray-400 hover: cursor-pointer"
+                    : "text-gray-500 dark:text-gray-400 hover:cursor-pointer"
                 }`}
               >
                 HTML
@@ -1480,6 +1481,13 @@ export default function NoteEditorPanel({ note, onSave, onDiscard, onDelete }) {
     </div>
   );
 }
+
+NoteEditorPanel.propTypes = {
+  note: noteShape,
+  onSave: PropTypes.func.isRequired,
+  onDiscard: PropTypes.func.isRequired,
+  onDelete: PropTypes.func.isRequired,
+};
 
 function formatDateTime(dateString) {
   if (!dateString) return "";

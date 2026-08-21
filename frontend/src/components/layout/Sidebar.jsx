@@ -13,16 +13,24 @@ import {
 import { useAuth } from "../../context/AuthContext";
 import { useTheme } from "../../context/ThemeContext";
 import { getUserImage } from "../../utils/userImage";
+import { removeToken } from "../../utils/authStorage";
 
 export default function Sidebar() {
+  /** @type {{ user: { name?: string, email?: string, avatarUrl?: string } | null, logout: () => Promise<void> }} */
   const { user, logout } = useAuth();
+  /** @type {{ theme: "light" | "dark", toggleTheme: () => void }} */
   const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
   const [userMenuOpen, setUserMenuOpen] = useState(false);
 
   async function handleLogout() {
-    await logout();
-    navigate("/login");
+    try {
+      await logout();
+    } catch {
+      removeToken();
+    } finally {
+      navigate("/login");
+    }
   }
 
   const initials = user?.name?.charAt(0).toUpperCase() || "?";

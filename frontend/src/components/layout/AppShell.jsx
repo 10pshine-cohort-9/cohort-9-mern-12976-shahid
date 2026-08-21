@@ -15,8 +15,11 @@ import NotesListPanel from "../notes/NotesListPanel";
 import NoteEditorPanel from "../notes/NoteEditorPanel";
 import EmptyEditorState from "../notes/EmptyEditorState";
 
+/** @typedef {{ _id: string, title: string, content: string, createdAt?: string, updatedAt?: string }} Note */
+
 export default function AppShell() {
   const navigate = useNavigate();
+  /** @type {[Note[], import("react").Dispatch<import("react").SetStateAction<Note[]>>]} */
   const [notes, setNotes] = useState([]);
   const [loadingNotes, setLoadingNotes] = useState(true);
   const [fetchError, setFetchError] = useState("");
@@ -113,7 +116,11 @@ export default function AppShell() {
       if (activeNoteId === "new") {
         const note = await createNote({ title, content });
         const created = mergeSavedContent(note, { title, content });
-        setNotes((prev) => [created, ...prev]);
+        if (searchQuery.trim()) {
+          await loadNotes(searchQuery);
+        } else {
+          setNotes((prev) => [created, ...prev]);
+        }
         setActiveNoteId(created._id);
         setActiveNote(created);
         return;
@@ -128,9 +135,13 @@ export default function AppShell() {
         title,
         content,
       });
-      setNotes((prev) =>
-        prev.map((n) => (n._id === updated._id ? updated : n)),
-      );
+      if (searchQuery.trim()) {
+        await loadNotes(searchQuery);
+      } else {
+        setNotes((prev) =>
+          prev.map((n) => (n._id === updated._id ? updated : n)),
+        );
+      }
       setActiveNote(updated);
     } catch (err) {
       toast.error(err.response?.data?.message || "Could not save note.");

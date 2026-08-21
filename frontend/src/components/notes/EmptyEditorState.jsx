@@ -1,4 +1,5 @@
-import { Plus } from 'lucide-react';
+import { Plus } from "lucide-react";
+import PropTypes from "prop-types";
 
 export default function EmptyEditorState({ onNewNote }) {
   return (
@@ -20,3 +21,7 @@ export default function EmptyEditorState({ onNewNote }) {
     </div>
   );
 }
+
+EmptyEditorState.propTypes = {
+  onNewNote: PropTypes.func.isRequired,
+};

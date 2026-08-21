@@ -23,6 +23,8 @@ const ALLOWED_IMAGE_MIME_TYPES = new Set([
   "image/webp",
 ]);
 
+/** @typedef {{ name?: string, password?: string, imageFile?: File }} ProfileUpdatePayload */
+
 export default function ProfilePage() {
   const { user, updateUser, logout } = useAuth();
   const navigate = useNavigate();
@@ -47,6 +49,7 @@ export default function ProfilePage() {
     fileInputRef.current?.click();
   }
 
+  /** @param {Event} e */
   function handleImageChange(e) {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -68,6 +71,7 @@ export default function ProfilePage() {
     setPreviewUrl(URL.createObjectURL(file));
   }
 
+  /** @param {SubmitEvent} e */
   async function handleSave(e) {
     e.preventDefault();
 

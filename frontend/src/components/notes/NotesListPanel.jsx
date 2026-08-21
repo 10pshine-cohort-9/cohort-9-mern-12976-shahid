@@ -4,6 +4,8 @@ import { formatDate } from "../../utils/formatDate";
 import { sanitizeHtml } from "../../utils/sanitizeHtml";
 import DeleteNoteDialog from "./DeleteNoteDialog";
 import Loader from "../common/Loader";
+import PropTypes from "prop-types";
+import { noteShape } from "../../utils/propTypes";
 
 // Strip HTML and truncate to a short preview string
 function getPreview(html) {
@@ -191,3 +193,15 @@ export default function NotesListPanel({
     </section>
   );
 }
+
+NotesListPanel.propTypes = {
+  notes: PropTypes.arrayOf(noteShape).isRequired,
+  loading: PropTypes.bool.isRequired,
+  error: PropTypes.string.isRequired,
+  searchQuery: PropTypes.string.isRequired,
+  onSearchChange: PropTypes.func.isRequired,
+  activeNoteId: PropTypes.string,
+  onSelectNote: PropTypes.func.isRequired,
+  onNewNote: PropTypes.func.isRequired,
+  onDeleteNote: PropTypes.func.isRequired,
+};

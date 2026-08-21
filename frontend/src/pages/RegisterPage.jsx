@@ -17,6 +17,7 @@ export default function RegisterPage() {
   // Already logged in — send straight to notes
   if (user) return <Navigate to="/notes" replace />;
 
+  /** @param {SubmitEvent} e @returns {Promise<void>} */
   async function handleSubmit(e) {
     e.preventDefault();
     setError("");
@@ -31,9 +32,11 @@ export default function RegisterPage() {
       await register(name.trim(), email.trim(), password);
       toast.success("Account created successfully");
       navigate("/notes");
-    } catch (err) {
+    } catch (/** @type {{ response?: { data?: { message?: string } }, cause?: { response?: { data?: { message?: string } } }, message?: string }} */ err) {
       const message =
-        err.response?.data?.message || "Registration failed. Please try again.";
+        err.response?.data?.message ||
+        err.cause?.response?.data?.message ||
+        "Registration failed. Please try again.";
       setError(message);
       toast.error(message);
     } finally {

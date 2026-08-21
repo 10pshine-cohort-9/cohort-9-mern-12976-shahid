@@ -24,6 +24,7 @@ const noteValidation = [
     .withMessage("Title must be 200 characters or fewer."),
   body("content")
     .optional({ values: "undefined" })
+    .trim()
     .notEmpty()
     .withMessage("Content cannot be empty."),
   validate,

@@ -1,26 +1,26 @@
-import { useState } from 'react';
-import { Link, useNavigate, Navigate } from 'react-router-dom';
-import toast from 'react-hot-toast';
-import { Mail, Lock, FileText } from 'lucide-react';
-import { useAuth } from '../context/AuthContext';
+import { useState } from "react";
+import { Link, useNavigate, Navigate } from "react-router-dom";
+import toast from "react-hot-toast";
+import { Mail, Lock, FileText } from "lucide-react";
+import { useAuth } from "../context/AuthContext";
 
 export default function LoginPage() {
   const { login, user } = useAuth();
   const navigate = useNavigate();
 
-  
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  
+
   // Already logged in — send straight to notes
   if (user) return <Navigate to="/notes" replace />;
+  /** @param {SubmitEvent} e */
   async function handleSubmit(e) {
     e.preventDefault();
-    setError('');
+    setError("");
     if (!email.trim() || !password) {
-      const message = 'Please fill in all fields';
+      const message = "Please fill in all fields";
       setError(message);
       toast.error(message);
       return;
@@ -28,10 +28,11 @@ export default function LoginPage() {
     setLoading(true);
     try {
       await login(email.trim(), password);
-      toast.success('Signed in successfully');
-      navigate('/notes');
+      toast.success("Signed in successfully");
+      navigate("/notes");
     } catch (err) {
-      const message = err.response?.data?.message || 'Login failed. Please try again.';
+      const message =
+        err.response?.data?.message || "Login failed. Please try again.";
       setError(message);
       toast.error(message);
     } finally {
@@ -42,21 +43,26 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-950 flex items-center justify-center px-4 transition-colors">
       <div className="w-full max-w-sm">
-
         {/* Brand */}
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-indigo-600 mb-3">
             <FileText className="w-6 h-6 text-white" />
           </div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Welcome back</h1>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Sign in to your notes</p>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+            Welcome back
+          </h1>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+            Sign in to your notes
+          </p>
         </div>
 
         <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 p-8 transition-colors">
           <form onSubmit={handleSubmit} className="space-y-4" noValidate>
-
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+              <label
+                htmlFor="email"
+                className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5"
+              >
                 Email
               </label>
               <div className="relative flex items-center">
@@ -76,7 +82,10 @@ export default function LoginPage() {
             </div>
 
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+              <label
+                htmlFor="password"
+                className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5"
+              >
                 Password
               </label>
               <div className="relative flex items-center">
@@ -106,14 +115,17 @@ export default function LoginPage() {
               disabled={loading}
               className="w-full bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600 disabled:opacity-60 text-white font-medium py-2.5 rounded-lg text-sm transition-colors hover:cursor-pointer"
             >
-              {loading ? 'Signing in…' : 'Sign in'}
+              {loading ? "Signing in…" : "Sign in"}
             </button>
           </form>
         </div>
 
         <p className="mt-5 text-center text-sm text-gray-500 dark:text-gray-400">
-          Don't have an account?{' '}
-          <Link to="/register" className="text-indigo-600 dark:text-indigo-400 font-medium hover:underline">
+          Don't have an account?{" "}
+          <Link
+            to="/register"
+            className="text-indigo-600 dark:text-indigo-400 font-medium hover:underline"
+          >
             Create one
           </Link>
         </p>
