@@ -259,10 +259,11 @@ export default function AppShell() {
           className={`${showEditor ? "hidden md:flex" : "flex"} min-h-0 shrink-0`}
         >
           <NotesListPanel
-            notes={filteredNotes}
-            loading={loadingNotes}
+          notes={filteredNotes}
+            loading={loadingNotes || searchQuery !== debouncedSearchQuery}
             error={fetchError}
             searchQuery={searchQuery}
+            debouncedSearchQuery={debouncedSearchQuery}
             onSearchChange={handleSearchChange}
             activeNoteId={activeNoteId}
             onSelectNote={handleSelectNote}

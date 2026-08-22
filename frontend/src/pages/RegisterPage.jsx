@@ -116,7 +116,6 @@ export default function RegisterPage() {
             <form
               onSubmit={handleSubmit}
               className="space-y-4 rounded-2xl border border-slate-200/80 bg-white/90 p-6 shadow-xl shadow-slate-900/5"
-              noValidate
             >
               <div>
                 <label

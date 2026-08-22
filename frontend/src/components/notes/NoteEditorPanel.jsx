@@ -45,7 +45,7 @@ function ToolbarBtn({ onClick, active, title, children }) {
       }}
       title={title}
       aria-label={title}
-      aria-pressed={active}
+      aria-pressed={active !== undefined ? active : undefined}
       className={`flex-shrink-0 rounded p-1.5 text-sm transition-colors ${
         active
           ? "bg-indigo-100 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300"
@@ -147,9 +147,19 @@ function htmlToPlainText(html) {
       .trim();
   }
 
-  const parser = new window.DOMParser();
-  const doc = parser.parseFromString(html, "text/html");
-  return (doc.body.textContent || "").replace(/\u00a0/g, " ").trim();
+ const parser = new window.DOMParser();
+const doc = parser.parseFromString(html, "text/html");
+
+// 1. Convert <br> tags to actual newline characters
+doc.querySelectorAll('br').forEach(br => br.replaceWith('\n'));
+
+// 2. Add a newline after block elements to prevent squashed text (includes h4-h6 for safe pasting)
+doc.querySelectorAll('p, div, li, blockquote,  h1, h2, h3').forEach(block => {
+  block.insertAdjacentText('afterend', '\n');
+});
+
+// 3. Extract text, normalize non-breaking spaces, and trim edges
+return (doc.body.textContent || "").replace(/\u00a0/g, " ").trim();
 }
 
 function buildTxtFileName(title) {
@@ -1510,7 +1520,9 @@ export default function NoteEditorPanel({ note, onSave, onDiscard, onDelete }) {
       <div className="px-4 pb-2 pt-4 md:px-6 md:pt-5">
         {isEditing ? (
           <>
-            <label htmlFor="note-title" className="sr-only">Note title</label>
+            <label htmlFor="note-title" className="sr-only">
+              Note title
+            </label>
             <input
               id="note-title"
               type="text"

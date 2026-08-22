@@ -12,8 +12,21 @@ export default function SeoMeta({
   canonical,
   noindex = false,
 }) {
-  const fullTitle = title ? `${title} | ${APP_NAME}` : `${APP_NAME} | ${DEFAULT_TITLE}`;
+  const fullTitle = title
+    ? `${title} | ${APP_NAME}`
+    : `${APP_NAME} | ${DEFAULT_TITLE}`;
   const robots = noindex ? "noindex,nofollow" : "index,follow";
+
+  // Safely resolve canonical paths to absolute URLs
+  const siteOrigin =
+    typeof window !== "undefined" ? window.location.origin : "";
+  const resolvedCanonical = canonical
+    ? canonical.startsWith("http")
+      ? canonical
+      : siteOrigin
+        ? new URL(canonical, siteOrigin).href
+        : canonical
+    : null;
 
   return (
     <Helmet>
@@ -27,7 +40,9 @@ export default function SeoMeta({
       <meta name="twitter:card" content="summary_large_image" />
       <meta name="twitter:title" content={fullTitle} />
       <meta name="twitter:description" content={description} />
-      {canonical ? <link rel="canonical" href={canonical} /> : null}
+      {resolvedCanonical ? (
+        <link rel="canonical" href={resolvedCanonical} />
+      ) : null}
     </Helmet>
   );
 }

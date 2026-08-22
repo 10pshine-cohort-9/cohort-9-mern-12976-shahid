@@ -54,7 +54,10 @@ export default function NotesListPanel({
   }
 
   return (
-    <section aria-label="Notes list" className="flex h-full w-screen flex-shrink-0 flex-col bg-white transition-colors dark:bg-gray-900 md:w-80 md:border-r md:border-gray-100 md:dark:border-gray-800">
+    <section
+      aria-label="Notes list"
+      className="flex h-full w-screen flex-shrink-0 flex-col bg-white transition-colors dark:bg-gray-900 md:w-80 md:border-r md:border-gray-100 md:dark:border-gray-800"
+    >
       {/* Header */}
       <div className="border-b border-gray-100 px-4 pb-3 pt-4 dark:border-gray-800 md:pt-5">
         <h2 className="text-base font-semibold text-gray-900 dark:text-white mb-3">
@@ -163,7 +166,7 @@ export default function NotesListPanel({
                   onClick={(e) => toggleMenu(e, note._id)}
                   aria-expanded={menuOpenId === note._id}
                   aria-haspopup="true"
-                  className="absolute right-3 top-3 rounded p-1 text-gray-400 transition-opacity hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 md:opacity-0 md:group-hover:opacity-100"
+                  className="absolute right-3 top-3 rounded p-1 text-gray-400 transition-opacity hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 md:opacity-0 md:group-hover:opacity-100 md:focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
                   aria-label={`Open options for note: ${note.title}`}
                 >
                   <MoreVertical className="w-4 h-4" />
@@ -171,7 +174,6 @@ export default function NotesListPanel({
 
                 {menuOpenId === note._id && (
                   <div
-                    role="menu"
                     aria-label={`Options for ${note.title}`}
                     className="absolute right-3 top-8 z-10 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-md py-1 w-36"
                     onClick={(e) => e.stopPropagation()}
