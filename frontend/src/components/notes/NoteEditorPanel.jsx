@@ -25,6 +25,8 @@ import {
   Save,
   Trash2,
   X,
+  Download,
+  Upload,
 } from "lucide-react";
 import DeleteNoteDialog from "./DeleteNoteDialog";
 import { uploadNoteImageFile } from "../../api/uploadApi";
@@ -42,6 +44,8 @@ function ToolbarBtn({ onClick, active, title, children }) {
         onClick();
       }}
       title={title}
+      aria-label={title}
+      aria-pressed={active}
       className={`flex-shrink-0 rounded p-1.5 text-sm transition-colors ${
         active
           ? "bg-indigo-100 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300"
@@ -61,6 +65,7 @@ const EMPTY_EDITOR_HTML = "<p></p>";
 const DEFAULT_IMAGE_ALIGN = "center";
 const DEFAULT_TEXT_ALIGN = "left";
 const MAX_IMAGE_FILE_SIZE = 5 * 1024 * 1024;
+const MAX_TEXT_IMPORT_FILE_SIZE = 1024 * 1024;
 const ALLOWED_IMAGE_MIME_TYPES = new Set([
   "image/jpeg",
   "image/jpg",
@@ -105,6 +110,62 @@ function getImageAlignmentStyle(value) {
 
 function isBlobUrl(value) {
   return typeof value === "string" && value.startsWith("blob:");
+}
+
+function escapeHtml(text) {
+  return text
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+function plainTextToEditorHtml(text) {
+  if (!text || !text.trim()) {
+    return EMPTY_EDITOR_HTML;
+  }
+
+  const normalizedText = text.replace(/\r\n?|\u2028|\u2029/g, "\n");
+  const lines = normalizedText.split("\n");
+
+  return lines
+    .map((line) => (line ? `<p>${escapeHtml(line)}</p>` : "<p><br></p>"))
+    .join("");
+}
+
+function htmlToPlainText(html) {
+  if (!html) {
+    return "";
+  }
+
+  if (typeof window === "undefined" || !window.DOMParser) {
+    return html
+      .replace(/<br\s*\/?>/gi, "\n")
+      .replace(/<\/p>/gi, "\n")
+      .replace(/<[^>]+>/g, "")
+      .trim();
+  }
+
+  const parser = new window.DOMParser();
+  const doc = parser.parseFromString(html, "text/html");
+  return (doc.body.textContent || "").replace(/\u00a0/g, " ").trim();
+}
+
+function buildTxtFileName(title) {
+  const baseName = (title || "note")
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9\s-]/g, "")
+    .replace(/\s+/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-|-$/g, "");
+
+  return `${baseName || "note"}.txt`;
+}
+
+function getTitleFromFileName(fileName = "") {
+  return fileName.replace(/\.txt$/i, "").trim();
 }
 
 function normalizeHtmlForEditor(html) {
@@ -689,6 +750,7 @@ export default function NoteEditorPanel({ note, onSave, onDiscard, onDelete }) {
   const [promptDialog, setPromptDialog] = useState(null);
   const [selectedImage, setSelectedImage] = useState(null);
   const imageInputRef = useRef(null);
+  const textImportInputRef = useRef(null);
   const pendingImageFilesRef = useRef(new Map());
   const uploadedPendingPreviewsRef = useRef(new Set());
 
@@ -1165,6 +1227,85 @@ export default function NoteEditorPanel({ note, onSave, onDiscard, onDelete }) {
     imageInputRef.current?.click();
   }
 
+  function openTextImportPicker() {
+    textImportInputRef.current?.click();
+  }
+
+  async function handleTextFileImport(event) {
+    const file = event.target.files?.[0];
+
+    if (!file) {
+      return;
+    }
+
+    const isTxtFile = file.name.toLowerCase().endsWith(".txt");
+
+    if (!isTxtFile) {
+      toast.error("Only .txt files are supported for import.");
+      event.target.value = "";
+      return;
+    }
+
+    if (file.size > MAX_TEXT_IMPORT_FILE_SIZE) {
+      toast.error("Text file is too large. Please use a file up to 1MB.");
+      event.target.value = "";
+      return;
+    }
+
+    try {
+      const text = await file.text();
+      const importedHtml = plainTextToEditorHtml(text);
+
+      if (isHtmlMode) {
+        setHtmlValue(importedHtml);
+      } else {
+        setEditorContentWithImageAlignments(editor, importedHtml);
+        setHtmlValue(editor?.getHTML() || importedHtml);
+      }
+
+      if (!title.trim()) {
+        setTitle(getTitleFromFileName(file.name));
+      }
+
+      setContentError("");
+      toast.success("Text file imported.");
+    } catch {
+      toast.error("Could not read this text file.");
+    } finally {
+      event.target.value = "";
+    }
+  }
+
+  function handleTextExport() {
+    const currentHtml = isHtmlMode
+      ? htmlValue
+      : editor?.getHTML() || note?.content || "";
+
+    const plainText =
+      !isHtmlMode && editor
+        ? editor.getText({ blockSeparator: "\n\n" }).trim()
+        : htmlToPlainText(currentHtml);
+
+    if (!plainText) {
+      toast.error("Nothing to export yet.");
+      return;
+    }
+
+    const blob = new Blob([plainText], {
+      type: "text/plain;charset=utf-8",
+    });
+    const objectUrl = URL.createObjectURL(blob);
+    const anchor = document.createElement("a");
+
+    anchor.href = objectUrl;
+    anchor.download = buildTxtFileName(title || note?.title);
+    document.body.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
+
+    URL.revokeObjectURL(objectUrl);
+  }
+
   async function handleImageSelected(event) {
     const file = event.target.files?.[0];
     const previewUrl = createLocalImagePreview(file);
@@ -1284,6 +1425,24 @@ export default function NoteEditorPanel({ note, onSave, onDiscard, onDelete }) {
           My Notes {note?.title ? `› ${note.title}` : "› New note"}
         </span>
         <div className="flex flex-wrap items-center justify-end gap-2">
+          <button
+            type="button"
+            onClick={handleTextExport}
+            className="flex items-center gap-1 rounded px-2 py-1 text-xs text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-700 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-gray-200 hover:cursor-pointer"
+          >
+            <Download className="w-3 h-3" />
+            Export .txt
+          </button>
+          {isEditing && (
+            <button
+              type="button"
+              onClick={openTextImportPicker}
+              className="flex items-center gap-1 rounded px-2 py-1 text-xs text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-700 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-gray-200 hover:cursor-pointer"
+            >
+              <Upload className="w-3 h-3" />
+              Import .txt
+            </button>
+          )}
           {!isNew && (
             <button
               type="button"
@@ -1351,7 +1510,9 @@ export default function NoteEditorPanel({ note, onSave, onDiscard, onDelete }) {
       <div className="px-4 pb-2 pt-4 md:px-6 md:pt-5">
         {isEditing ? (
           <>
+            <label htmlFor="note-title" className="sr-only">Note title</label>
             <input
+              id="note-title"
               type="text"
               value={title}
               onChange={(e) => {
@@ -1393,10 +1554,21 @@ export default function NoteEditorPanel({ note, onSave, onDiscard, onDelete }) {
         <>
           <input
             ref={imageInputRef}
+            id="image-upload"
             type="file"
             accept="image/jpeg,image/png,image/webp"
+            aria-label="Upload image"
             className="hidden"
             onChange={handleImageSelected}
+          />
+          <input
+            ref={textImportInputRef}
+            id="text-import"
+            type="file"
+            accept=".txt,text/plain"
+            aria-label="Import text file"
+            className="hidden"
+            onChange={handleTextFileImport}
           />
 
           {!isHtmlMode && (
@@ -1416,12 +1588,14 @@ export default function NoteEditorPanel({ note, onSave, onDiscard, onDelete }) {
           <div className="flex-1 overflow-y-auto bg-white dark:bg-gray-900">
             {isHtmlMode ? (
               <textarea
+                id="html-editor"
                 value={htmlValue}
                 onChange={(e) => {
                   setHtmlValue(e.target.value);
                   setContentError("");
                 }}
                 spellCheck={false}
+                aria-label="HTML content editor"
                 className="h-full min-h-[300px] w-full resize-none border-0 bg-white p-4 font-mono text-sm text-gray-800 outline-none dark:bg-gray-900 dark:text-gray-100"
                 placeholder="<p>Write your HTML here...</p>"
               />

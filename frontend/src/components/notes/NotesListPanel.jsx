@@ -54,7 +54,7 @@ export default function NotesListPanel({
   }
 
   return (
-    <section className="flex h-full w-screen flex-shrink-0 flex-col bg-white transition-colors dark:bg-gray-900 md:w-80 md:border-r md:border-gray-100 md:dark:border-gray-800">
+    <section aria-label="Notes list" className="flex h-full w-screen flex-shrink-0 flex-col bg-white transition-colors dark:bg-gray-900 md:w-80 md:border-r md:border-gray-100 md:dark:border-gray-800">
       {/* Header */}
       <div className="border-b border-gray-100 px-4 pb-3 pt-4 dark:border-gray-800 md:pt-5">
         <h2 className="text-base font-semibold text-gray-900 dark:text-white mb-3">
@@ -71,13 +71,16 @@ export default function NotesListPanel({
             value={searchQuery}
             onChange={(e) => onSearchChange(e.target.value)}
             placeholder="Search notes..."
+            aria-label="Search notes"
             className="w-full pl-8 pr-3 py-1.5 text-sm bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-transparent transition-colors"
           />
         </div>
 
         {/* Add new note button */}
         <button
+          type="button"
           onClick={onNewNote}
+          aria-label="Add new note"
           className="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-500 dark:text-gray-400 border border-dashed border-gray-300 dark:border-gray-700 rounded-lg hover:border-indigo-400 dark:hover:border-indigo-500 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors hover:cursor-pointer
           "
         >
@@ -158,19 +161,24 @@ export default function NotesListPanel({
                 <button
                   type="button"
                   onClick={(e) => toggleMenu(e, note._id)}
+                  aria-expanded={menuOpenId === note._id}
+                  aria-haspopup="true"
                   className="absolute right-3 top-3 rounded p-1 text-gray-400 transition-opacity hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 md:opacity-0 md:group-hover:opacity-100"
-                  aria-label="Note options"
+                  aria-label={`Open options for note: ${note.title}`}
                 >
                   <MoreVertical className="w-4 h-4" />
                 </button>
 
                 {menuOpenId === note._id && (
                   <div
+                    role="menu"
+                    aria-label={`Options for ${note.title}`}
                     className="absolute right-3 top-8 z-10 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-md py-1 w-36"
                     onClick={(e) => e.stopPropagation()}
                   >
                     <button
                       type="button"
+                      role="menuitem"
                       onClick={(e) => openDeleteDialog(e, note)}
                       className="w-full text-left px-3 py-1.5 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 flex items-center gap-2"
                     >

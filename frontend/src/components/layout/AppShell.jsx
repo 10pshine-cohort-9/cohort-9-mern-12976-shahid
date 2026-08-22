@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import { FileText, Plus, User } from "lucide-react";
@@ -14,22 +14,41 @@ import Loader from "../common/Loader";
 import NotesListPanel from "../notes/NotesListPanel";
 import NoteEditorPanel from "../notes/NoteEditorPanel";
 import EmptyEditorState from "../notes/EmptyEditorState";
+import SeoMeta from "../seo/SeoMeta";
 
 /** @typedef {{ _id: string, title: string, content: string, createdAt?: string, updatedAt?: string }} Note */
+
+function toPlainText(html = "") {
+  if (!html) {
+    return "";
+  }
+
+  if (typeof window !== "undefined" && window.DOMParser) {
+    const parser = new window.DOMParser();
+    const doc = parser.parseFromString(html, "text/html");
+    return (doc.body.textContent || "").replace(/\s+/g, " ").trim();
+  }
+
+  return html
+    .replace(/<[^>]+>/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
 
 export default function AppShell() {
   const navigate = useNavigate();
   /** @type {[Note[], import("react").Dispatch<import("react").SetStateAction<Note[]>>]} */
-  const [notes, setNotes] = useState([]);
+  const [allNotes, setAllNotes] = useState([]);
   const [loadingNotes, setLoadingNotes] = useState(true);
   const [fetchError, setFetchError] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState("");
   const [activeNoteId, setActiveNoteId] = useState(null);
   const [activeNote, setActiveNote] = useState(null);
   const [loadingNote, setLoadingNote] = useState(false);
   const abortControllerRef = useRef(null);
 
-  const loadNotes = useCallback(async (search = "") => {
+  const loadNotes = useCallback(async () => {
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
     }
@@ -41,8 +60,8 @@ export default function AppShell() {
     setFetchError("");
 
     try {
-      const notes = await getNotes(search, controller.signal);
-      setNotes(notes);
+      const notes = await getNotes("", controller.signal);
+      setAllNotes(notes);
     } catch (err) {
       if (err.name === "CanceledError" || err.code === "ERR_CANCELED") {
         return;
@@ -56,9 +75,38 @@ export default function AppShell() {
   }, []);
 
   useEffect(() => {
-    const timer = setTimeout(() => loadNotes(searchQuery), 250);
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    loadNotes();
+
+    return () => {
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+    };
+  }, [loadNotes]);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedSearchQuery(searchQuery), 250);
     return () => clearTimeout(timer);
-  }, [searchQuery, loadNotes]);
+  }, [searchQuery]);
+
+  const filteredNotes = useMemo(() => {
+    const query = debouncedSearchQuery.trim().toLowerCase();
+
+    if (!query) {
+      return allNotes;
+    }
+
+    return allNotes.filter((note) => {
+      const title = note.title?.toLowerCase() || "";
+      const bodyText = toPlainText(note.content).toLowerCase();
+      return title.includes(query) || bodyText.includes(query);
+    });
+  }, [allNotes, debouncedSearchQuery]);
+
+  const handleSearchChange = useCallback((value) => {
+    setSearchQuery(value);
+  }, []);
 
   useEffect(() => {
     if (!activeNoteId || activeNoteId === "new") {
@@ -116,11 +164,7 @@ export default function AppShell() {
       if (activeNoteId === "new") {
         const note = await createNote({ title, content });
         const created = mergeSavedContent(note, { title, content });
-        if (searchQuery.trim()) {
-          await loadNotes(searchQuery);
-        } else {
-          setNotes((prev) => [created, ...prev]);
-        }
+        setAllNotes((prev) => [created, ...prev]);
         setActiveNoteId(created._id);
         setActiveNote(created);
         return;
@@ -135,13 +179,9 @@ export default function AppShell() {
         title,
         content,
       });
-      if (searchQuery.trim()) {
-        await loadNotes(searchQuery);
-      } else {
-        setNotes((prev) =>
-          prev.map((n) => (n._id === updated._id ? updated : n)),
-        );
-      }
+      setAllNotes((prev) =>
+        prev.map((n) => (n._id === updated._id ? updated : n)),
+      );
       setActiveNote(updated);
     } catch (err) {
       toast.error(err.response?.data?.message || "Could not save note.");
@@ -151,7 +191,7 @@ export default function AppShell() {
   async function handleDeleteNote(note) {
     try {
       await deleteNote(note._id);
-      setNotes((prev) => prev.filter((n) => n._id !== note._id));
+      setAllNotes((prev) => prev.filter((n) => n._id !== note._id));
       if (activeNoteId === note._id) {
         setActiveNoteId(null);
         setActiveNote(null);
@@ -168,6 +208,11 @@ export default function AppShell() {
 
   return (
     <div className="flex h-dvh flex-col overflow-hidden bg-gray-50 dark:bg-gray-950 transition-colors lg:h-screen lg:flex-row">
+      <SeoMeta
+        title="My Notes"
+        description="Manage and search your notes with a fast editor and responsive layout."
+        canonical="/notes"
+      />
       <header className="flex items-center justify-between border-b border-gray-100 bg-white px-4 py-3 dark:border-gray-800 dark:bg-gray-900 lg:hidden">
         <button
           type="button"
@@ -187,6 +232,7 @@ export default function AppShell() {
           <button
             type="button"
             onClick={handleNewNote}
+            aria-label="Create a new note"
             className="inline-flex items-center gap-1.5 rounded-lg bg-indigo-600 px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-indigo-700"
           >
             <Plus className="h-4 w-4" />
@@ -195,6 +241,7 @@ export default function AppShell() {
           <button
             type="button"
             onClick={() => navigate("/profile")}
+            aria-label="Open profile page"
             className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 px-3 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800"
           >
             <User className="h-4 w-4" />
@@ -212,11 +259,11 @@ export default function AppShell() {
           className={`${showEditor ? "hidden md:flex" : "flex"} min-h-0 shrink-0`}
         >
           <NotesListPanel
-            notes={notes}
+            notes={filteredNotes}
             loading={loadingNotes}
             error={fetchError}
             searchQuery={searchQuery}
-            onSearchChange={setSearchQuery}
+            onSearchChange={handleSearchChange}
             activeNoteId={activeNoteId}
             onSelectNote={handleSelectNote}
             onNewNote={handleNewNote}

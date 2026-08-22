@@ -37,7 +37,7 @@ export default function Sidebar() {
   const userImage = getUserImage(user);
 
   return (
-    <aside className="hidden h-full w-56 shrink-0 flex-col border-r border-gray-100 bg-white transition-colors dark:border-gray-800 dark:bg-gray-900 lg:flex">
+    <aside aria-label="Application sidebar" className="hidden h-full w-56 shrink-0 flex-col border-r border-gray-100 bg-white transition-colors dark:border-gray-800 dark:bg-gray-900 lg:flex">
       {/* App brand */}
       <div className="px-4 pt-5 pb-3 flex items-center gap-2">
         <div className="w-7 h-7 rounded-lg bg-indigo-600 flex items-center justify-center shrink-0">
@@ -52,6 +52,9 @@ export default function Sidebar() {
       <div className="px-3 py-2 border-b border-gray-100 dark:border-gray-800">
         <button
           onClick={() => setUserMenuOpen((v) => !v)}
+          aria-expanded={userMenuOpen}
+          aria-haspopup="true"
+          aria-label={`${user?.name || "User"} menu`}
           className="flex items-center gap-2 w-full text-left hover:bg-gray-50 dark:hover:bg-gray-800 rounded-lg px-2 py-1.5 transition-colors hover:cursor-pointer"
         >
           <div className="w-8 h-8 rounded-full bg-indigo-100 dark:bg-indigo-900 text-indigo-600 dark:text-indigo-400 flex items-center justify-center text-sm font-semibold shrink-0 overflow-hidden">
@@ -104,7 +107,7 @@ export default function Sidebar() {
       </div>
 
       {/* Nav */}
-      <nav className="flex-1 px-3 py-3 overflow-y-auto">
+      <nav aria-label="Main navigation" className="flex-1 px-3 py-3 overflow-y-auto">
         <button
           onClick={() => navigate("/notes")}
           className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm mb-0.5 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-400 font-medium transition-colors"
