@@ -14,6 +14,7 @@ import {
 import { useAuth } from "../context/AuthContext";
 import { formatDate } from "../utils/formatDate";
 import { getUserImage } from "../utils/userImage";
+import SeoMeta from "../components/seo/SeoMeta";
 
 const MAX_IMAGE_FILE_SIZE = 5 * 1024 * 1024;
 const ALLOWED_IMAGE_MIME_TYPES = new Set([
@@ -117,6 +118,11 @@ export default function ProfilePage() {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-950 flex items-center justify-center px-4 py-10 transition-colors">
+      <SeoMeta
+        title="Profile"
+        description="Update your account profile, avatar, and security settings."
+        canonical="/profile"
+      />
       <div className="w-full max-w-md">
         <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 overflow-hidden transition-colors">
           <div className="bg-gradient-to-r from-indigo-600 to-violet-600 h-28" />
