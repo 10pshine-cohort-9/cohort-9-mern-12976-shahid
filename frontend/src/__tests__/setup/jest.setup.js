@@ -51,11 +51,8 @@ const originalError = console.error.bind(console);
 const originalWarn = console.warn.bind(console);
 
 const SUPPRESSED_PATTERNS = [
-  "Warning: An update to",
-  "inside a test was not wrapped in act",
   "Warning: ReactDOM.render",
   "Not implemented: navigation",
-  "Error: Not implemented",
   "Suspense/Lazy",
 ];
 
