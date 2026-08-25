@@ -29,19 +29,40 @@ let userCounter = 0;
 /**
  * Register a unique user and return their Bearer token.
  * Uses an auto-incrementing counter so parallel helper calls never collide.
+ * Wraps each step so a setup failure surfaces with clear context rather
+ * than cascading as "Cannot read properties of undefined (reading '_id')"
+ * across every test in the suite.
  */
 async function createUserAndGetToken(nameSuffix = "") {
   userCounter += 1;
   const email = `user${userCounter}${nameSuffix}@notes-test.com`;
   const password = "password123";
 
-  await request(app)
-    .post("/api/auth/register")
-    .send({ name: `Test User ${userCounter}`, email, password });
+  let registerRes;
+  try {
+    registerRes = await request(app)
+      .post("/api/auth/register")
+      .send({ name: `Test User ${userCounter}`, email, password });
+  } catch (err) {
+    throw new Error(`createUserAndGetToken: register step failed — ${err.message}`);
+  }
+  if (registerRes.status !== 201) {
+    throw new Error(
+      `createUserAndGetToken: register returned ${registerRes.status} — ${JSON.stringify(registerRes.body)}`
+    );
+  }
 
-  const loginRes = await request(app)
-    .post("/api/auth/login")
-    .send({ email, password });
+  let loginRes;
+  try {
+    loginRes = await request(app).post("/api/auth/login").send({ email, password });
+  } catch (err) {
+    throw new Error(`createUserAndGetToken: login step failed — ${err.message}`);
+  }
+  if (!loginRes.body.token) {
+    throw new Error(
+      `createUserAndGetToken: login returned ${loginRes.status} with no token — ${JSON.stringify(loginRes.body)}`
+    );
+  }
 
   return loginRes.body.token;
 }

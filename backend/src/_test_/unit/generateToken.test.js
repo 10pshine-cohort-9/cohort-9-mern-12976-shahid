@@ -61,34 +61,35 @@ describe("generateToken()", () => {
   // ── Expiry ────────────────────────────────────────────────────────────────────
   describe("expiry", () => {
     it("should honour JWT_EXPIRES_IN when set to '1d'", () => {
+      const saved = process.env.JWT_EXPIRES_IN;
       process.env.JWT_EXPIRES_IN = "1d";
+      try {
+        // generateToken reads process.env at call-time (no module-level caching),
+        // so re-setting env and calling again is sufficient.
+        const token = generateToken("507f1f77bcf86cd799439011");
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-      // Re-import to pick up the new env value
-      // generateToken reads process.env at call-time (no module-level caching),
-      // so re-setting env and calling again is sufficient.
-      const token = generateToken("507f1f77bcf86cd799439011");
-      const decoded = jwt.verify(token, process.env.JWT_SECRET);
-
-      const expectedExp =
-        Math.floor(Date.now() / 1000) + 60 * 60 * 24; // 1 day in seconds
-      // Allow ±5 s drift for test execution time
-      expect(decoded.exp).to.be.within(expectedExp - 5, expectedExp + 5);
-
-      // Restore for subsequent tests
-      process.env.JWT_EXPIRES_IN = "7d";
+        const expectedExp =
+          Math.floor(Date.now() / 1000) + 60 * 60 * 24; // 1 day in seconds
+        // Allow ±5 s drift for test execution time
+        expect(decoded.exp).to.be.within(expectedExp - 5, expectedExp + 5);
+      } finally {
+        process.env.JWT_EXPIRES_IN = saved;
+      }
     });
 
     it("should default to ~7 days expiry when JWT_EXPIRES_IN is not set", () => {
       const saved = process.env.JWT_EXPIRES_IN;
       delete process.env.JWT_EXPIRES_IN;
+      try {
+        const token = generateToken("507f1f77bcf86cd799439011");
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-      const token = generateToken("507f1f77bcf86cd799439011");
-      const decoded = jwt.verify(token, process.env.JWT_SECRET);
-
-      const sevenDays = Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 7;
-      expect(decoded.exp).to.be.within(sevenDays - 5, sevenDays + 5);
-
-      process.env.JWT_EXPIRES_IN = saved;
+        const sevenDays = Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 7;
+        expect(decoded.exp).to.be.within(sevenDays - 5, sevenDays + 5);
+      } finally {
+        process.env.JWT_EXPIRES_IN = saved;
+      }
     });
   });
 

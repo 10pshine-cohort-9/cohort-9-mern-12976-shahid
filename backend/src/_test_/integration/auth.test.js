@@ -37,16 +37,39 @@ function registerUser(overrides = {}) {
 
 /**
  * Register then login a user and return the Bearer token.
+ * Wraps each step so a setup failure surfaces with clear context rather
+ * than cascading as "Cannot read properties of undefined (reading 'token')"
+ * across every test in the suite.
  */
 async function getAuthToken(
   email = "test@example.com",
   password = "password123"
 ) {
-  await registerUser({ email, password });
-  const res = await request(app)
-    .post("/api/auth/login")
-    .send({ email, password });
-  return res.body.token;
+  let registerRes;
+  try {
+    registerRes = await registerUser({ email, password });
+  } catch (err) {
+    throw new Error(`getAuthToken: register step failed — ${err.message}`);
+  }
+  if (registerRes.status !== 201) {
+    throw new Error(
+      `getAuthToken: register returned ${registerRes.status} — ${JSON.stringify(registerRes.body)}`
+    );
+  }
+
+  let loginRes;
+  try {
+    loginRes = await request(app).post("/api/auth/login").send({ email, password });
+  } catch (err) {
+    throw new Error(`getAuthToken: login step failed — ${err.message}`);
+  }
+  if (!loginRes.body.token) {
+    throw new Error(
+      `getAuthToken: login returned ${loginRes.status} with no token — ${JSON.stringify(loginRes.body)}`
+    );
+  }
+
+  return loginRes.body.token;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
