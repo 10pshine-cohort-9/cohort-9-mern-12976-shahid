@@ -54,6 +54,7 @@ export default function Sidebar() {
       {/* User info */}
       <div className="px-3 py-2 border-b border-gray-100 dark:border-gray-800">
         <button
+          type="button"
           onClick={() => setUserMenuOpen((v) => !v)}
           aria-expanded={userMenuOpen}
           aria-label={`${user?.name || "User"} menu`}
@@ -88,6 +89,7 @@ export default function Sidebar() {
         {userMenuOpen && (
           <div className="mt-1 rounded-lg bg-gray-50 dark:bg-gray-800 border border-gray-100 dark:border-gray-700 overflow-hidden">
             <button
+              type="button"
               onClick={() => {
                 navigate("/profile");
                 setUserMenuOpen(false);
@@ -98,6 +100,7 @@ export default function Sidebar() {
               Profile
             </button>
             <button
+              type="button"
               onClick={handleLogout}
               className="w-full text-left px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 flex items-center gap-2 hover:cursor-pointer transition-colors "
             >
@@ -114,6 +117,7 @@ export default function Sidebar() {
         className="flex-1 px-3 py-3 overflow-y-auto"
       >
         <button
+          type="button"
           onClick={() => navigate("/notes")}
           className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm mb-0.5 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-400 font-medium transition-colors"
         >
@@ -134,6 +138,7 @@ export default function Sidebar() {
 
         */}
         <button
+          type="button"
           onClick={() => navigate("/profile")}
           className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors hover:cursor-pointer"
         >
@@ -143,6 +148,7 @@ export default function Sidebar() {
 
         {/* Theme toggle */}
         <button
+          type="button"
           onClick={toggleTheme}
           className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors hover:cursor-pointer"
           aria-label={

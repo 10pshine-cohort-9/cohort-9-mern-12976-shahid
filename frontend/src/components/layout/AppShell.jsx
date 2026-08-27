@@ -17,22 +17,34 @@ import EmptyEditorState from "../notes/EmptyEditorState";
 import SeoMeta from "../seo/SeoMeta";
 
 /** @typedef {{ _id: string, title: string, content: string, createdAt?: string, updatedAt?: string }} Note */
-
 function toPlainText(html = "") {
   if (!html) {
     return "";
   }
 
-  if (typeof window !== "undefined" && window.DOMParser) {
-    const parser = new window.DOMParser();
-    const doc = parser.parseFromString(html, "text/html");
-    return (doc.body.textContent || "").replace(/\s+/g, " ").trim();
-  }
+ 
+ if (typeof window !== "undefined" && window.DOMParser) {
+   const parser = new window.DOMParser();
+   const doc = parser.parseFromString(html, "text/html");
+   return (doc.body.textContent || "").replace(/\s+/g, " ").trim();
+ }
 
-  return html
-    .replace(/<[^>]+>/g, " ")
-    .replace(/\s+/g, " ")
-    .trim();
+ let strippedHtml = "";
+ let insideTag = false;
+
+ for (const char of html) {
+   if (char === "<") {
+     insideTag = true;
+     strippedHtml += " ";
+   } else if (char === ">") {
+     insideTag = false;
+   } else if (!insideTag) {
+     strippedHtml += char;
+   }
+ }
+
+  // 3. Clean up the extra spaces
+  return strippedHtml.replace(/\s+/g, " ").trim();
 }
 
 export default function AppShell() {

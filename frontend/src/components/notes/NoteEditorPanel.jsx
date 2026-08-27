@@ -114,11 +114,11 @@ function isBlobUrl(value) {
 
 function escapeHtml(text) {
   return text
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#39;");
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#39;");
 }
 
 function plainTextToEditorHtml(text) {
@@ -140,11 +140,29 @@ function htmlToPlainText(html) {
   }
 
   if (typeof window === "undefined" || !window.DOMParser) {
-    return html
+    // 1. Convert specific tags to newlines (These specific regexes are bounded and safe)
+    let processedText = html
       .replace(/<br\s*\/?>/gi, "\n")
-      .replace(/<\/p>/gi, "\n")
-      .replace(/<[^>]+>/g, "")
-      .trim();
+      .replace(/<\/p>/gi, "\n");
+
+    // 2. Strip all remaining HTML tags safely without super-linear regex
+    let strippedText = "";
+    let insideTag = false;
+
+    // Modern ES6 for-of loop to clear the code smell
+    for (const char of processedText) {
+      if (char === "<") {
+        insideTag = true;
+      } else if (char === ">") {
+        insideTag = false;
+      } else if (!insideTag) {
+        // Only append characters that are not inside HTML brackets
+        strippedText += char;
+      }
+    }
+
+    // 3. Trim the final result
+    return strippedText.trim();
   }
 
  const parser = new window.DOMParser();
@@ -159,7 +177,7 @@ doc.querySelectorAll('p, div, li, blockquote,  h1, h2, h3').forEach(block => {
 });
 
 // 3. Extract text, normalize non-breaking spaces, and trim edges
-return (doc.body.textContent || "").replace(/\u00a0/g, " ").trim();
+return (doc.body.textContent || "").replaceAll("\u00a0", " ").trim();
 }
 
 function buildTxtFileName(title) {
@@ -187,9 +205,9 @@ function normalizeHtmlForEditor(html) {
     /<code>([\s\S]*?)<\/code>/gi,
     (_, innerHtml) => {
       const escapedInnerHtml = innerHtml
-        .replace(/&(?!(?:[a-zA-Z]+|#\d+|#x[\da-fA-F]+);)/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;");
+        .replaceAll(/&(?!(?:[a-zA-Z][a-zA-Z\d]*|#(?:x[\da-fA-F]+|\d+));)/g, "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;");
 
       return `<code>${escapedInnerHtml}</code>`;
     },
@@ -1490,6 +1508,7 @@ export default function NoteEditorPanel({ note, onSave, onDiscard, onDelete }) {
             </div>
           )}
           <button
+            type="button"
             onClick={handleCancelEditing}
             className="flex items-center gap-1 rounded px-2 py-1 text-xs text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600 dark:text-gray-500 dark:hover:bg-gray-800 dark:hover:text-gray-300 hover: cursor-pointer"
           >
@@ -1498,6 +1517,7 @@ export default function NoteEditorPanel({ note, onSave, onDiscard, onDelete }) {
           </button>
           {isEditing ? (
             <button
+              type="button"
               onClick={handleSave}
               disabled={saving}
               className="flex items-center gap-1.5 rounded-lg bg-indigo-600 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-indigo-700 disabled:opacity-50 hover: cursor-pointer"
@@ -1507,6 +1527,7 @@ export default function NoteEditorPanel({ note, onSave, onDiscard, onDelete }) {
             </button>
           ) : (
             <button
+              type="button"
               onClick={handleStartEditing}
               className="rounded-lg bg-indigo-600 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-indigo-700 hover: cursor-pointer"
             >

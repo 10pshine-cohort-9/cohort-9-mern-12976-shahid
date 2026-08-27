@@ -229,6 +229,7 @@ export default function ProfilePage() {
                   className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5"
                 >
                   New Password
+                  {" "}
                   <span className="ml-1 text-xs font-normal text-gray-400 dark:text-gray-500">
                     (Leave blank to keep unchanged)
                   </span>
