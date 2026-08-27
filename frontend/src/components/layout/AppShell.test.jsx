@@ -146,103 +146,131 @@ describe("AppShell — toPlainText (DOMParser path)", () => {
 
   it("renders both notes after loading", async () => {
     renderAppShell();
-    await waitForNotesToLoad("HTML Note");
+    try {
+      await waitForNotesToLoad("HTML Note");
 
-    expect(screen.getByText("HTML Note")).toBeInTheDocument();
-    expect(screen.getByText("Plain Note")).toBeInTheDocument();
+      expect(screen.getByText("HTML Note")).toBeInTheDocument();
+      expect(screen.getByText("Plain Note")).toBeInTheDocument();
+    } catch (err) {
+      throw err;
+    }
   });
 
   it("filters notes by title (DOMParser path)", async () => {
     renderAppShell();
-    await waitForNotesToLoad("HTML Note");
+    try {
+      await waitForNotesToLoad("HTML Note");
 
-    const input = screen.getByRole("searchbox", { name: /search notes/i });
+      const input = screen.getByRole("searchbox", { name: /search notes/i });
 
-    await act(async () => {
-      await userEvent.type(input, "plain");
-    });
-    // Advance past the 250 ms debounce
-    act(() => { jest.advanceTimersByTime(300); });
+      await act(async () => {
+        await userEvent.type(input, "plain");
+      });
+      // Advance past the 250 ms debounce
+      act(() => { jest.advanceTimersByTime(300); });
 
-    await waitFor(() => {
-      expect(screen.queryByText("HTML Note")).not.toBeInTheDocument();
-    });
-    expect(screen.getByText("Plain Note")).toBeInTheDocument();
+      await waitFor(() => {
+        expect(screen.queryByText("HTML Note")).not.toBeInTheDocument();
+      });
+      expect(screen.getByText("Plain Note")).toBeInTheDocument();
+    } catch (err) {
+      throw err;
+    }
   });
 
   it("finds a note by its HTML body text (DOMParser strips tags)", async () => {
     renderAppShell();
-    await waitForNotesToLoad("HTML Note");
+    try {
+      await waitForNotesToLoad("HTML Note");
 
-    const input = screen.getByRole("searchbox", { name: /search notes/i });
+      const input = screen.getByRole("searchbox", { name: /search notes/i });
 
-    await act(async () => {
-      await userEvent.type(input, "world");
-    });
-    act(() => { jest.advanceTimersByTime(300); });
+      await act(async () => {
+        await userEvent.type(input, "world");
+      });
+      act(() => { jest.advanceTimersByTime(300); });
 
-    await waitFor(() => {
-      expect(screen.queryByText("Plain Note")).not.toBeInTheDocument();
-    });
-    expect(screen.getByText("HTML Note")).toBeInTheDocument();
+      await waitFor(() => {
+        expect(screen.queryByText("Plain Note")).not.toBeInTheDocument();
+      });
+      expect(screen.getByText("HTML Note")).toBeInTheDocument();
+    } catch (err) {
+      throw err;
+    }
   });
 
   it("shows empty state when search matches nothing", async () => {
     renderAppShell();
-    await waitForNotesToLoad("HTML Note");
+    try {
+      await waitForNotesToLoad("HTML Note");
 
-    const input = screen.getByRole("searchbox", { name: /search notes/i });
+      const input = screen.getByRole("searchbox", { name: /search notes/i });
 
-    await act(async () => {
-      await userEvent.type(input, "zzznomatch");
-    });
-    act(() => { jest.advanceTimersByTime(300); });
+      await act(async () => {
+        await userEvent.type(input, "zzznomatch");
+      });
+      act(() => { jest.advanceTimersByTime(300); });
 
-    await waitFor(() => {
-      expect(screen.getByText(/no notes matching/i)).toBeInTheDocument();
-    });
+      await waitFor(() => {
+        expect(screen.getByText(/no notes matching/i)).toBeInTheDocument();
+      });
+    } catch (err) {
+      throw err;
+    }
   });
 
   it("restores all notes when search is cleared", async () => {
     renderAppShell();
-    await waitForNotesToLoad("HTML Note");
+    try {
+      await waitForNotesToLoad("HTML Note");
 
-    const input = screen.getByRole("searchbox", { name: /search notes/i });
+      const input = screen.getByRole("searchbox", { name: /search notes/i });
 
-    await act(async () => { await userEvent.type(input, "plain"); });
-    act(() => { jest.advanceTimersByTime(300); });
-    await waitFor(() => {
-      expect(screen.queryByText("HTML Note")).not.toBeInTheDocument();
-    });
+      await act(async () => { await userEvent.type(input, "plain"); });
+      act(() => { jest.advanceTimersByTime(300); });
+      await waitFor(() => {
+        expect(screen.queryByText("HTML Note")).not.toBeInTheDocument();
+      });
 
-    await act(async () => { await userEvent.clear(input); });
-    act(() => { jest.advanceTimersByTime(300); });
+      await act(async () => { await userEvent.clear(input); });
+      act(() => { jest.advanceTimersByTime(300); });
 
-    await waitFor(() => {
-      expect(screen.getByText("HTML Note")).toBeInTheDocument();
-    });
-    expect(screen.getByText("Plain Note")).toBeInTheDocument();
+      await waitFor(() => {
+        expect(screen.getByText("HTML Note")).toBeInTheDocument();
+      });
+      expect(screen.getByText("Plain Note")).toBeInTheDocument();
+    } catch (err) {
+      throw err;
+    }
   });
 
   it("handles a note with empty content without crashing", async () => {
     renderAppShell([NOTE_EMPTY_CONTENT]);
-    await waitForNotesToLoad("Empty Content");
+    try {
+      await waitForNotesToLoad("Empty Content");
 
-    expect(screen.getByText("Empty Content")).toBeInTheDocument();
+      expect(screen.getByText("Empty Content")).toBeInTheDocument();
+    } catch (err) {
+      throw err;
+    }
   });
 
   it("handles a note whose content is only HTML tags (no visible text)", async () => {
     renderAppShell([NOTE_ONLY_TAGS, NOTE_PLAIN]);
-    await waitForNotesToLoad("Tags Only");
+    try {
+      await waitForNotesToLoad("Tags Only");
 
-    const input = screen.getByRole("searchbox", { name: /search notes/i });
+      const input = screen.getByRole("searchbox", { name: /search notes/i });
 
-    await act(async () => { await userEvent.type(input, "span"); });
-    act(() => { jest.advanceTimersByTime(300); });
+      await act(async () => { await userEvent.type(input, "span"); });
+      act(() => { jest.advanceTimersByTime(300); });
 
-    await waitFor(() => {
-      expect(screen.getByText(/no notes matching/i)).toBeInTheDocument();
-    });
+      await waitFor(() => {
+        expect(screen.getByText(/no notes matching/i)).toBeInTheDocument();
+      });
+    } catch (err) {
+      throw err;
+    }
   });
 });
 
@@ -289,17 +317,18 @@ describe("AppShell — toPlainText (for-of fallback, no DOMParser)", () => {
 
   it("filters notes correctly via the for-of loop", async () => {
     const restore = await setupFallback();
+    try {
+      const input = screen.getByRole("searchbox", { name: /search notes/i });
+      await act(async () => { await userEvent.type(input, "world"); });
+      act(() => { jest.advanceTimersByTime(300); });
 
-    const input = screen.getByRole("searchbox", { name: /search notes/i });
-    await act(async () => { await userEvent.type(input, "world"); });
-    act(() => { jest.advanceTimersByTime(300); });
-
-    await waitFor(() => {
-      expect(screen.queryByText("Plain Note")).not.toBeInTheDocument();
-    });
-    expect(screen.getByText("HTML Note")).toBeInTheDocument();
-
-    restore();
+      await waitFor(() => {
+        expect(screen.queryByText("Plain Note")).not.toBeInTheDocument();
+      });
+      expect(screen.getByText("HTML Note")).toBeInTheDocument();
+    } finally {
+      restore();
+    }
   });
 
   it("handles a lone '<' with no closing '>' (insideTag stays true)", async () => {
@@ -311,30 +340,32 @@ describe("AppShell — toPlainText (for-of fallback, no DOMParser)", () => {
       updatedAt: "2025-01-05T00:00:00.000Z",
     };
     const restore = await setupFallback([noteUnclosed]);
+    try {
+      const input = screen.getByRole("searchbox", { name: /search notes/i });
+      await act(async () => { await userEvent.type(input, "before"); });
+      act(() => { jest.advanceTimersByTime(300); });
 
-    const input = screen.getByRole("searchbox", { name: /search notes/i });
-    await act(async () => { await userEvent.type(input, "before"); });
-    act(() => { jest.advanceTimersByTime(300); });
-
-    await waitFor(() => {
-      expect(screen.getByText("Unclosed Note")).toBeInTheDocument();
-    });
-
-    restore();
+      await waitFor(() => {
+        expect(screen.getByText("Unclosed Note")).toBeInTheDocument();
+      });
+    } finally {
+      restore();
+    }
   });
 
   it("handles plain text with no HTML (insideTag never set)", async () => {
     const restore = await setupFallback([NOTE_PLAIN]);
+    try {
+      const input = screen.getByRole("searchbox", { name: /search notes/i });
+      await act(async () => { await userEvent.type(input, "markup"); });
+      act(() => { jest.advanceTimersByTime(300); });
 
-    const input = screen.getByRole("searchbox", { name: /search notes/i });
-    await act(async () => { await userEvent.type(input, "markup"); });
-    act(() => { jest.advanceTimersByTime(300); });
-
-    await waitFor(() => {
-      expect(screen.getByText("Plain Note")).toBeInTheDocument();
-    });
-
-    restore();
+      await waitFor(() => {
+        expect(screen.getByText("Plain Note")).toBeInTheDocument();
+      });
+    } finally {
+      restore();
+    }
   });
 
   it("handles empty content (early return branch in toPlainText)", async () => {
@@ -344,29 +375,32 @@ describe("AppShell — toPlainText (for-of fallback, no DOMParser)", () => {
     const saved = window.DOMParser;
     delete window.DOMParser;
 
-    const input = screen.getByRole("searchbox", { name: /search notes/i });
-    await act(async () => { await userEvent.type(input, "anything"); });
-    act(() => { jest.advanceTimersByTime(300); });
+    try {
+      const input = screen.getByRole("searchbox", { name: /search notes/i });
+      await act(async () => { await userEvent.type(input, "anything"); });
+      act(() => { jest.advanceTimersByTime(300); });
 
-    await waitFor(() => {
-      expect(screen.getByText(/no notes matching/i)).toBeInTheDocument();
-    });
-
-    window.DOMParser = saved;
+      await waitFor(() => {
+        expect(screen.getByText(/no notes matching/i)).toBeInTheDocument();
+      });
+    } finally {
+      window.DOMParser = saved;
+    }
   });
 
   it("strips tags and extracts text from closed tags correctly", async () => {
     const restore = await setupFallback([NOTE_WITH_HTML, NOTE_PLAIN]);
+    try {
+      const input = screen.getByRole("searchbox", { name: /search notes/i });
+      await act(async () => { await userEvent.type(input, "plain"); });
+      act(() => { jest.advanceTimersByTime(300); });
 
-    const input = screen.getByRole("searchbox", { name: /search notes/i });
-    await act(async () => { await userEvent.type(input, "plain"); });
-    act(() => { jest.advanceTimersByTime(300); });
-
-    await waitFor(() => {
-      expect(screen.getByText("Plain Note")).toBeInTheDocument();
-    });
-
-    restore();
+      await waitFor(() => {
+        expect(screen.getByText("Plain Note")).toBeInTheDocument();
+      });
+    } finally {
+      restore();
+    }
   });
 });
 
@@ -392,8 +426,12 @@ describe("AppShell — load error handling", () => {
       </HelmetProvider>
     );
 
-    await waitFor(() => {
-      expect(screen.getByText("Server error")).toBeInTheDocument();
-    }, { timeout: 3000 });
+    try {
+      await waitFor(() => {
+        expect(screen.getByText("Server error")).toBeInTheDocument();
+      }, { timeout: 3000 });
+    } catch (err) {
+      throw err;
+    }
   });
 });

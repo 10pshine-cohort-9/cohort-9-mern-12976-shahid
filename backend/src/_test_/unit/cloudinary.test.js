@@ -96,10 +96,20 @@ function getSafePublicId(originalName = "image") {
 // Import both functions from the real module so coverage is counted
 // against the actual source lines by c8 / SonarQube.
 // ─────────────────────────────────────────────────────────────────────────────
-const {
-  assertCloudinaryConfig,
-  getSafePublicId: realGetSafePublicId,
-} = await import("../../config/cloudinary.js");
+let assertCloudinaryConfig;
+let realGetSafePublicId;
+
+try {
+  ({
+    assertCloudinaryConfig,
+    getSafePublicId: realGetSafePublicId,
+  } = await import("../../config/cloudinary.js"));
+} catch (error) {
+  throw new Error(
+    `Cloudinary test setup failed during dynamic import: ${error.message}`, 
+    { cause: error }
+  );
+}
 
 // ─────────────────────────────────────────────────────────────────────────────
 

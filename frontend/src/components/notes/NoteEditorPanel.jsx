@@ -153,7 +153,7 @@ function htmlToPlainText(html) {
     for (const char of processedText) {
       if (char === "<") {
         insideTag = true;
-      } else if (char === ">") {
+      } else if (char === ">" && insideTag) {
         insideTag = false;
       } else if (!insideTag) {
         // Only append characters that are not inside HTML brackets

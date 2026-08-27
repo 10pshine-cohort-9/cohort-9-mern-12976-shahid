@@ -278,20 +278,28 @@ describe("NoteEditorPanel — htmlToPlainText for-of loop (SSR path)", () => {
     // In view mode, clicking Export .txt calls htmlToPlainText on the note content
     const toastMock = require("react-hot-toast").default;
     renderEditor(buildProps({ note: { ...existingNote, content: "" } }));
-    // Should not crash; toast.error is called because nothing to export
-    await userEvent.click(screen.getByRole("button", { name: /export .txt/i }));
-    expect(toastMock.error).toHaveBeenCalledWith("Nothing to export yet.");
+    try {
+      // Should not crash; toast.error is called because nothing to export
+      await userEvent.click(screen.getByRole("button", { name: /export .txt/i }));
+      expect(toastMock.error).toHaveBeenCalledWith("Nothing to export yet.");
+    } catch (err) {
+      throw err;
+    }
   });
 
   it("switches to HTML mode and then Export triggers htmlToPlainText branch", async () => {
     // Enter edit mode → switch to HTML mode → export
     renderEditor(buildProps());
-    await userEvent.click(screen.getByRole("button", { name: /^edit$/i }));
-    await userEvent.click(screen.getByRole("button", { name: /^html$/i }));
-    // Export .txt in HTML mode calls htmlToPlainText on the HTML textarea value
-    // Should not throw; DOMParser is available in jsdom but the function degrades gracefully
-    expect(() =>
-      fireEvent.click(screen.getByRole("button", { name: /export .txt/i }))
-    ).not.toThrow();
+    try {
+      await userEvent.click(screen.getByRole("button", { name: /^edit$/i }));
+      await userEvent.click(screen.getByRole("button", { name: /^html$/i }));
+      // Export .txt in HTML mode calls htmlToPlainText on the HTML textarea value
+      // Should not throw; DOMParser is available in jsdom but the function degrades gracefully
+      expect(() =>
+        fireEvent.click(screen.getByRole("button", { name: /export .txt/i }))
+      ).not.toThrow();
+    } catch (err) {
+      throw err;
+    }
   });
 });

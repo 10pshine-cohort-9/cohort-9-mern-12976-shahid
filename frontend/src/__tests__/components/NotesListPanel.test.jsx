@@ -208,6 +208,19 @@ describe("NotesListPanel — getPreview HTML-stripping branches", () => {
     expect(screen.getByText(notTagNote.title)).toBeInTheDocument();
   });
 
+  it("preserves a standalone '>' character that is not closing a tag", () => {
+    // A bare '>' outside any tag must appear in the preview, not be swallowed
+    const gtNote = {
+      ...sampleNote,
+      _id: "gt-text",
+      content: "<p>a > b</p>",
+      updatedAt: "2025-01-20T10:00:00.000Z",
+    };
+    renderPanel(buildProps({ notes: [gtNote] }));
+    // The preview should contain the '>' character
+    expect(screen.getByText(/a > b/)).toBeInTheDocument();
+  });
+
   it("handles content that is exactly 110 chars without truncation", () => {
     const exactNote = {
       _id: "exact110",
@@ -229,61 +242,84 @@ describe("NotesListPanel — interactions", () => {
   it("calls onNewNote when 'Add new note' button is clicked", async () => {
     const onNewNote = jest.fn();
     renderPanel(buildProps({ onNewNote }));
-    await userEvent.click(screen.getByRole("button", { name: /add new note/i }));
-    expect(onNewNote).toHaveBeenCalledTimes(1);
+    try {
+      await userEvent.click(screen.getByRole("button", { name: /add new note/i }));
+      expect(onNewNote).toHaveBeenCalledTimes(1);
+    } catch (err) {
+      throw err;
+    }
   });
 
   it("calls onSelectNote with the note when a note item is clicked", async () => {
     const onSelectNote = jest.fn();
     renderPanel(buildProps({ notes: [sampleNote], onSelectNote }));
-    await userEvent.click(
-      screen.getByRole("button", { name: /select note: test note/i })
-    );
-    expect(onSelectNote).toHaveBeenCalledWith(sampleNote);
+    try {
+      await userEvent.click(
+        screen.getByRole("button", { name: /select note: test note/i })
+      );
+      expect(onSelectNote).toHaveBeenCalledWith(sampleNote);
+    } catch (err) {
+      throw err;
+    }
   });
 
   it("calls onSearchChange with the typed value", async () => {
     const onSearchChange = jest.fn();
     renderPanel(buildProps({ onSearchChange }));
     const input = screen.getByRole("searchbox", { name: /search notes/i });
-    await userEvent.type(input, "hello");
-    expect(onSearchChange).toHaveBeenCalled();
+    try {
+      await userEvent.type(input, "hello");
+      expect(onSearchChange).toHaveBeenCalled();
+    } catch (err) {
+      throw err;
+    }
   });
 
   it("opens the three-dot menu on click", async () => {
     renderPanel(buildProps({ notes: [sampleNote] }));
     const menuBtn = screen.getByRole("button", { name: /open options for note: test note/i });
-    await userEvent.click(menuBtn);
-    expect(screen.getByRole("menu")).toBeInTheDocument();
+    try {
+      await userEvent.click(menuBtn);
+      expect(screen.getByRole("menu")).toBeInTheDocument();
+    } catch (err) {
+      throw err;
+    }
   });
 
   it("opens the delete dialog from the three-dot menu", async () => {
     renderPanel(buildProps({ notes: [sampleNote] }));
     const menuBtn = screen.getByRole("button", { name: /open options for note: test note/i });
-    await userEvent.click(menuBtn);
-    const deleteBtn = screen.getByRole("menuitem", { name: /delete/i });
-    await userEvent.click(deleteBtn);
-    // DeleteNoteDialog should appear — it contains a confirm button
-    expect(screen.getByRole("button", { name: /delete/i })).toBeInTheDocument();
+    try {
+      await userEvent.click(menuBtn);
+      const deleteBtn = screen.getByRole("menuitem", { name: /delete/i });
+      await userEvent.click(deleteBtn);
+      // DeleteNoteDialog should appear — it contains a confirm button
+      expect(screen.getByRole("button", { name: /delete/i })).toBeInTheDocument();
+    } catch (err) {
+      throw err;
+    }
   });
 
   it("calls onDeleteNote and clears the dialog after confirming delete", async () => {
     const onDeleteNote = jest.fn().mockResolvedValue(undefined);
     renderPanel(buildProps({ notes: [sampleNote], onDeleteNote }));
+    try {
+      // Open menu
+      await userEvent.click(
+        screen.getByRole("button", { name: /open options for note: test note/i })
+      );
+      // Click delete in menu
+      await userEvent.click(screen.getByRole("menuitem", { name: /delete/i }));
 
-    // Open menu
-    await userEvent.click(
-      screen.getByRole("button", { name: /open options for note: test note/i })
-    );
-    // Click delete in menu
-    await userEvent.click(screen.getByRole("menuitem", { name: /delete/i }));
+      // Confirm in dialog
+      const confirmBtn = await screen.findByRole("button", { name: /^delete$/i });
+      await userEvent.click(confirmBtn);
 
-    // Confirm in dialog
-    const confirmBtn = await screen.findByRole("button", { name: /^delete$/i });
-    await userEvent.click(confirmBtn);
-
-    await waitFor(() => {
-      expect(onDeleteNote).toHaveBeenCalledWith(sampleNote);
-    });
+      await waitFor(() => {
+        expect(onDeleteNote).toHaveBeenCalledWith(sampleNote);
+      });
+    } catch (err) {
+      throw err;
+    }
   });
 });

@@ -30,9 +30,12 @@ import app from "../helpers/testApp.js";
 
 describe("testApp — security headers", () => {
   it("does NOT include an X-Powered-By header on any response", async () => {
-    const res = await request(app).get("/");
-
-    expect(res.headers).to.not.have.property("x-powered-by");
+    try {
+      const res = await request(app).get("/");
+      expect(res.headers).to.not.have.property("x-powered-by");
+    } catch (error) {
+      throw new Error(`Test failed during request in 'X-Powered-By header' check: ${error.message}`);
+    }
   });
 
   it("X-Powered-By is absent on 404 responses too", async () => {
@@ -128,22 +131,29 @@ describe("testApp — URL-encoded body parser", () => {
 // ─────────────────────────────────────────────────────────────────────────────
 // Auth routes  app.use("/api/auth", authRoutes)
 // ─────────────────────────────────────────────────────────────────────────────
-
 describe("testApp — /api/auth routes are mounted", () => {
-  it("POST /api/auth/register is reachable (returns 400 or 201, not 404)", async () => {
-    const res = await request(app)
-      .post("/api/auth/register")
-      .send({});
+  it("POST /api/auth/register is reachable (returns 400 for empty payload)", async () => {
+    try {
+      const res = await request(app)
+        .post("/api/auth/register")
+        .send({});
 
-    expect(res.status).to.not.equal(404);
+      expect(res.status).to.equal(400);
+    } catch (error) {
+      throw new Error(`Test failed during request in 'POST /api/auth/register' check: ${error.message}`);
+    }
   });
 
-  it("POST /api/auth/login is reachable (returns 400 or 401, not 404)", async () => {
-    const res = await request(app)
-      .post("/api/auth/login")
-      .send({});
+  it("POST /api/auth/login is reachable (returns 400 for empty payload)", async () => {
+    try {
+      const res = await request(app)
+        .post("/api/auth/login")
+        .send({});
 
-    expect(res.status).to.not.equal(404);
+      expect(res.status).to.equal(400);
+    } catch (error) {
+      throw new Error(`Test failed during request in 'POST /api/auth/login' check: ${error.message}`);
+    }
   });
 });
 

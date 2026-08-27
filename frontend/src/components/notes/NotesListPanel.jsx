@@ -19,7 +19,7 @@ function getPreview(html) {
     if (char === "<") {
       insideTag = true;
       strippedHtml += " ";
-    } else if (char === ">") {
+    } else if (char === ">" && insideTag) {
       insideTag = false;
     } else if (!insideTag) {
       strippedHtml += char;

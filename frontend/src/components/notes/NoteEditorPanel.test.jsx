@@ -173,57 +173,69 @@ describe("NoteEditorPanel — rendering", () => {
 describe("NoteEditorPanel — htmlToPlainText (DOMParser path)", () => {
   it("exports without throwing for rich HTML content", async () => {
     renderPanel(RICH_NOTE);
+    try {
+      await act(async () => {
+        await enterHtmlMode();
+        await userEvent.click(
+          screen.getByRole("button", { name: /export \.txt/i })
+        );
+      });
 
-    await act(async () => {
-      await enterHtmlMode();
-      await userEvent.click(
-        screen.getByRole("button", { name: /export \.txt/i })
-      );
-    });
-
-    expect(anchorClickSpy).toHaveBeenCalledTimes(1);
+      expect(anchorClickSpy).toHaveBeenCalledTimes(1);
+    } catch (err) {
+      throw err;
+    }
   });
 
   it("handles <br> tags (replaceWith newline branch)", async () => {
     renderPanel({ ...BASE_NOTE, content: "<p>line one</p><br/><p>line two</p>" });
+    try {
+      await act(async () => {
+        await enterHtmlMode();
+        await userEvent.click(
+          screen.getByRole("button", { name: /export \.txt/i })
+        );
+      });
 
-    await act(async () => {
-      await enterHtmlMode();
-      await userEvent.click(
-        screen.getByRole("button", { name: /export \.txt/i })
-      );
-    });
-
-    expect(anchorClickSpy).toHaveBeenCalledTimes(1);
-    expect(createdAnchors[0].download).toMatch(/\.txt$/);
+      expect(anchorClickSpy).toHaveBeenCalledTimes(1);
+      expect(createdAnchors[0].download).toMatch(/\.txt$/);
+    } catch (err) {
+      throw err;
+    }
   });
 
   it("handles non-breaking spaces (\\u00a0 → space branch)", async () => {
     renderPanel(NBSP_NOTE);
+    try {
+      await act(async () => {
+        await enterHtmlMode();
+        await userEvent.click(
+          screen.getByRole("button", { name: /export \.txt/i })
+        );
+      });
 
-    await act(async () => {
-      await enterHtmlMode();
-      await userEvent.click(
-        screen.getByRole("button", { name: /export \.txt/i })
-      );
-    });
-
-    expect(anchorClickSpy).toHaveBeenCalledTimes(1);
+      expect(anchorClickSpy).toHaveBeenCalledTimes(1);
+    } catch (err) {
+      throw err;
+    }
   });
 
   it("shows toast.error when content is empty (early return branch)", async () => {
     renderPanel({ ...BASE_NOTE, content: "" });
+    try {
+      // In view mode with empty note, export button fires directly
+      await act(async () => {
+        await userEvent.click(
+          screen.getByRole("button", { name: /export \.txt/i })
+        );
+      });
 
-    // In view mode with empty note, export button fires directly
-    await act(async () => {
-      await userEvent.click(
-        screen.getByRole("button", { name: /export \.txt/i })
-      );
-    });
-
-    const toast = (await import("react-hot-toast")).default;
-    expect(toast.error).toHaveBeenCalledWith("Nothing to export yet.");
-    expect(anchorClickSpy).not.toHaveBeenCalled();
+      const toast = (await import("react-hot-toast")).default;
+      expect(toast.error).toHaveBeenCalledWith("Nothing to export yet.");
+      expect(anchorClickSpy).not.toHaveBeenCalled();
+    } catch (err) {
+      throw err;
+    }
   });
 
   it("handles block element newlines (insertAdjacentText branch)", async () => {
@@ -231,15 +243,18 @@ describe("NoteEditorPanel — htmlToPlainText (DOMParser path)", () => {
       ...BASE_NOTE,
       content: "<h1>Title</h1><p>Body</p><ul><li>Item</li></ul>",
     });
+    try {
+      await act(async () => {
+        await enterHtmlMode();
+        await userEvent.click(
+          screen.getByRole("button", { name: /export \.txt/i })
+        );
+      });
 
-    await act(async () => {
-      await enterHtmlMode();
-      await userEvent.click(
-        screen.getByRole("button", { name: /export \.txt/i })
-      );
-    });
-
-    expect(anchorClickSpy).toHaveBeenCalledTimes(1);
+      expect(anchorClickSpy).toHaveBeenCalledTimes(1);
+    } catch (err) {
+      throw err;
+    }
   });
 });
 
@@ -366,13 +381,19 @@ describe("NoteEditorPanel — htmlToPlainText (for-of fallback, no DOMParser)", 
 describe("NoteEditorPanel — buildTxtFileName (via export filename)", () => {
   async function getFilename(note) {
     const { unmount } = renderPanel(note);
-
-    await act(async () => {
-      await enterHtmlMode();
-      await userEvent.click(
-        screen.getByRole("button", { name: /export \.txt/i })
-      );
-    });
+    try {
+      await act(async () => {
+        await enterHtmlMode();
+        await userEvent.click(
+          screen.getByRole("button", { name: /export \.txt/i })
+        );
+      });
+    } catch (err) {
+      unmount();
+      createdAnchors.length = 0;
+      anchorClickSpy.mockClear();
+      throw err;
+    }
 
     const filename = createdAnchors[0]?.download ?? "";
     unmount();
@@ -442,22 +463,29 @@ describe("NoteEditorPanel — new note mode", () => {
   it("calls onDiscard when Discard is clicked", async () => {
     const onDiscard = jest.fn();
     renderPanel(null, { onDiscard });
-    await userEvent.click(screen.getByRole("button", { name: /discard/i }));
-    expect(onDiscard).toHaveBeenCalledTimes(1);
+    try {
+      await userEvent.click(screen.getByRole("button", { name: /discard/i }));
+      expect(onDiscard).toHaveBeenCalledTimes(1);
+    } catch (err) {
+      throw err;
+    }
   });
 
   it("shows title-required error when saving with no title", async () => {
     renderPanel(null);
-
-    await act(async () => {
-      await userEvent.click(screen.getByRole("button", { name: /^html$/i }));
-      const textarea = screen.getByRole("textbox", {
-        name: /html content editor/i,
+    try {
+      await act(async () => {
+        await userEvent.click(screen.getByRole("button", { name: /^html$/i }));
+        const textarea = screen.getByRole("textbox", {
+          name: /html content editor/i,
+        });
+        await userEvent.type(textarea, "<p>some content</p>");
+        await userEvent.click(screen.getByRole("button", { name: /^save$/i }));
       });
-      await userEvent.type(textarea, "<p>some content</p>");
-      await userEvent.click(screen.getByRole("button", { name: /^save$/i }));
-    });
 
-    expect(screen.getByText(/title is required/i)).toBeInTheDocument();
+      expect(screen.getByText(/title is required/i)).toBeInTheDocument();
+    } catch (err) {
+      throw err;
+    }
   });
 });
