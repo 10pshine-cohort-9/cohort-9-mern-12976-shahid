@@ -105,8 +105,7 @@ export default function DeleteNoteDialog({
           Are you sure you want to delete{" "}
           <strong className="text-gray-800 dark:text-gray-200">
             "{note.title}"
-          </strong>
-          ? This cannot be undone.
+          </strong>? This cannot be undone.
         </p>
         <div className="flex gap-3 justify-end">
           <Button variant="secondary" onClick={onCancel} disabled={deleting}>

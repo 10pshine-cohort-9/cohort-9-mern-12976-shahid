@@ -31,6 +31,7 @@ class ErrorBoundary extends React.Component {
             We had trouble loading this page. Please refresh to try again.
           </p>
           <button
+            type="button"
             onClick={() => window.location.reload()}
             className="rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-300"
           >

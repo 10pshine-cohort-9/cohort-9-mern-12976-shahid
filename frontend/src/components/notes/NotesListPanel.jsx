@@ -9,13 +9,27 @@ import { noteShape } from "../../utils/propTypes";
 
 // Strip HTML and truncate to a short preview string
 function getPreview(html) {
-  const clean = sanitizeHtml(html)
-    .replace(/<[^>]+>/g, " ")
-    .replace(/\s+/g, " ")
-    .trim();
+  const sanitized = sanitizeHtml(html);
+
+  let strippedHtml = "";
+  let insideTag = false;
+
+  // Modern ES6 for-of loop (fixes the SonarQube code smell)
+  for (const char of sanitized) {
+    if (char === "<") {
+      insideTag = true;
+      strippedHtml += " ";
+    } else if (char === ">" && insideTag) {
+      insideTag = false;
+    } else if (!insideTag) {
+      strippedHtml += char;
+    }
+  }
+
+  const clean = strippedHtml.replace(/\s+/g, " ").trim();
+
   return clean.length > 110 ? clean.slice(0, 110) + "…" : clean;
 }
-
 export default function NotesListPanel({
   notes,
   loading,
@@ -174,9 +188,12 @@ export default function NotesListPanel({
 
                 {menuOpenId === note._id && (
                   <div
+                    role="menu"
+                    tabIndex={0}
                     aria-label={`Options for ${note.title}`}
                     className="absolute right-3 top-8 z-10 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-md py-1 w-36"
                     onClick={(e) => e.stopPropagation()}
+                    onKeyDown={(e) => e.stopPropagation()}
                   >
                     <button
                       type="button"

@@ -33,6 +33,10 @@ module.exports = {
     "!src/__tests__/**",
   ],
 
+  coverageReporters: ["lcov", "text", "clover"],
+
+  coverageDirectory: "coverage",
+
   // Shim import.meta.env (Vite-specific, undefined in Node/Jest)
   globals: {
     "import.meta": {

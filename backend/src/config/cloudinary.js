@@ -1,7 +1,7 @@
 import "dotenv/config";
 import { v2 as cloudinary } from "cloudinary";
 import multer from "multer";
-import crypto from "crypto";
+import crypto from "node:crypto";
 import { CloudinaryStorage } from "multer-storage-cloudinary";
 
 const MAX_IMAGE_FILE_SIZE = 5 * 1024 * 1024;
@@ -40,20 +40,30 @@ cloudinary.config({
 });
 
 function getSafePublicId(originalName = "image") {
-  const baseName = originalName.replace(/\.[^/.]+$/, "");
+  const lastDotIndex = originalName.lastIndexOf(".");
+  const baseName = lastDotIndex > 0 ? originalName.slice(0, lastDotIndex) : originalName;
 
   const randomPart = crypto.randomBytes(4).toString("hex");
 
-  return `${Date.now()}-${randomPart}-${baseName}`
+  let safeString = `${Date.now()}-${randomPart}-${baseName}`
     .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "")
-    .slice(0, 80);
-}
+    .replace(/[^a-z0-9]/g, "-")
+    .replace(/-{2,}/g, "-");
 
-// Note: uploadOptions removed because it referenced `originalName` which
-// is not defined in this module. Public IDs are generated per-file inside
-// the storage `params` using `getSafePublicId(file.originalname)`.
+
+  let start = 0;
+  while (start < safeString.length && safeString[start] === "-") {
+    start++;
+  }
+
+  let end = safeString.length - 1;
+  while (end >= start && safeString[end] === "-") {
+    end--;
+  }
+
+
+  return safeString.slice(start, end + 1).slice(0, 80);
+}
 
 function imageFileFilter(req, file, cb) {
   if (!ALLOWED_IMAGE_MIME_TYPES.has(file.mimetype)) {
@@ -117,4 +127,5 @@ export {
   MAX_IMAGE_FILE_SIZE,
   ALLOWED_IMAGE_MIME_TYPES,
   assertCloudinaryConfig,
+  getSafePublicId,
 };

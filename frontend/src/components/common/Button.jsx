@@ -1,4 +1,4 @@
-export default function Button({ children, variant = 'primary', className = '', ...props }) {
+export default function Button({ children, variant = 'primary', className = '', type = 'button', ...props }) {
   const base =
     'px-4 py-2 rounded-md font-medium text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 dark:focus:ring-offset-gray-900 disabled:opacity-50 disabled:cursor-not-allowed';
 
@@ -12,7 +12,7 @@ export default function Button({ children, variant = 'primary', className = '', 
   };
 
   return (
-    <button className={`${base} ${variants[variant]} ${className}`} {...props}>
+    <button type={type} className={`${base} ${variants[variant]} ${className}`} {...props}>
       {children}
     </button>
   );
