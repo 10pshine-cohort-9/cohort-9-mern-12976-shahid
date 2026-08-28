@@ -134,7 +134,7 @@ export default function NotesListPanel({
           !error &&
           notes.map((note) => {
             const isActive = note._id === activeNoteId;
-            const preview = getPreview(note.content).slice(0, 50);         
+            const preview = getPreview(note.content, 50);         
 
             return (
               <div
