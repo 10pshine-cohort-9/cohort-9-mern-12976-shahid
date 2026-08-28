@@ -134,7 +134,7 @@ export default function NotesListPanel({
           !error &&
           notes.map((note) => {
             const isActive = note._id === activeNoteId;
-            const preview = getPreview(note.content);
+            const preview = getPreview(note.content).slice(0, 50);         
 
             return (
               <div
@@ -180,7 +180,7 @@ export default function NotesListPanel({
                   onClick={(e) => toggleMenu(e, note._id)}
                   aria-expanded={menuOpenId === note._id}
                   aria-haspopup="true"
-                  className="absolute right-3 top-3 rounded p-1 text-gray-400 transition-opacity hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 md:opacity-0 md:group-hover:opacity-100 md:focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+                  className="absolute right-3 top-3 rounded p-1 text-gray-400 transition-opacity hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 md:opacity-0 md:group-hover:opacity-100 md:focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 hover:cursor-pointer"
                   aria-label={`Open options for note: ${note.title}`}
                 >
                   <MoreVertical className="w-4 h-4" />
@@ -199,7 +199,7 @@ export default function NotesListPanel({
                       type="button"
                       role="menuitem"
                       onClick={(e) => openDeleteDialog(e, note)}
-                      className="w-full text-left px-3 py-1.5 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 flex items-center gap-2"
+                      className="w-full text-left px-3 py-1.5 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 flex items-center gap-2 hover:cursor-pointer transition-colors"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
                       Delete
