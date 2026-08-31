@@ -23,6 +23,7 @@ A full-stack notes management application built with the MERN stack (MongoDB, Ex
 ## Tech Stack
 
 ### Backend
+
 | Layer | Library |
 |---|---|
 | Runtime | Node.js (ESM) |
@@ -38,6 +39,7 @@ A full-stack notes management application built with the MERN stack (MongoDB, Ex
 | Coverage | c8 |
 
 ### Frontend
+
 | Layer | Library |
 |---|---|
 | UI Framework | React 19 + Vite |
@@ -75,7 +77,7 @@ MONGO_URI=mongodb://localhost:27017/notesapp
 
 # JWT
 JWT_SECRET=your_jwt_secret_here
-JWT_EXPIRES_IN=7d
+# JWT_EXPIRES_IN=7d   # optional — generateToken defaults to "7d" when unset
 
 # Cloudinary
 CLOUDINARY_CLOUD_NAME=your_cloud_name
