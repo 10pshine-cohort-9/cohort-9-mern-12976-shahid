@@ -526,7 +526,7 @@ function PromptDialog({
             />
           </label>
 
-          <div className="flex flex-wrap items-center justify-end gap-2">
+          <div className="w-full flex flex-wrap items-center justify-end gap-2">
             <button
               type="button"
               onClick={onClose}
@@ -590,7 +590,7 @@ function Toolbar({
   }
 
   return (
-    <div className="flex items-center gap-0.5 overflow-x-auto border-b border-gray-100 bg-white px-3 py-2 transition-colors dark:border-gray-700 dark:bg-gray-900">
+    <div className="flex items-center gap-0.5 overflow-x-auto border-b border-gray-100 bg-white px-3 py-2 transition-colors dark:border-gray-700 dark:bg-gray-900 hover:cursor-pointer">
       {/* Headings */}
       <ToolbarBtn
         onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()}
@@ -614,12 +614,13 @@ function Toolbar({
         <span className="text-xs font-bold">H3</span>
       </ToolbarBtn>
 
-      <Divider />
+      {/* <Divider /> */}
 
       <ToolbarBtn
         onClick={() => editor.chain().focus().toggleBold().run()}
         active={editor.isActive("bold")}
         title="Bold"
+        
       >
         <Bold className="w-3.5 h-3.5" />
       </ToolbarBtn>
@@ -1452,7 +1453,7 @@ export default function NoteEditorPanel({ note, onSave, onDiscard, onDelete }) {
         <span className="truncate">
           My Notes {note?.title ? `› ${note.title}` : "› New note"}
         </span>
-        <div className="flex flex-wrap items-center justify-end gap-2">
+        <div className="w-full flex flex-wrap items-center justify-end gap-2">
           <button
             type="button"
             onClick={handleTextExport}

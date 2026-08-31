@@ -26,7 +26,7 @@ const registrationValidation = [
     .withMessage("Please provide a valid email address."),
   body("password")
     .isLength({ min: 6, max: 128 })
-    .withMessage("Password must be between 6 and 128 characters."),
+    .withMessage("Password must be equal or greater than 6 characters."),
   validate,
 ];
 
@@ -50,7 +50,7 @@ const profileValidation = [
   body("password")
     .optional({ values: "undefined" })
     .isLength({ min: 6, max: 128 })
-    .withMessage("Password must be between 6 and 128 characters."),
+    .withMessage("Password must be equal or greater than 6 characters."),
   validate,
 ];
 
